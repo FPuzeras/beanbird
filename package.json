@@ -1,0 +1,34 @@
+{
+    "author": "faustas.puzeras@mf.vu.lt",
+    "dependencies": {
+        "@rebble/clay": "^1.0.8"
+    },
+    "keywords": [],
+    "name": "beanbird",
+    "pebble": {
+        "capabilities": [
+            "configurable",
+            "health"
+        ],
+        "displayName": "BeanBird",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "CaffContent[9]",
+            "DrinkTitle[9]",
+            "ShortList"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "emery"
+        ],
+        "uuid": "d128bfa9-0349-4d1f-83b6-b69037eb7e4a",
+        "watchapp": {
+            "watchface": false
+        }
+    },
+    "version": "0.1.0"
+}
