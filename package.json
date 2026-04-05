@@ -7,15 +7,13 @@
     "name": "beanbird",
     "pebble": {
         "capabilities": [
-            "configurable",
-            "health"
+            "configurable"
         ],
         "displayName": "BeanBird",
         "enableMultiJS": true,
         "messageKeys": [
-            "CaffContent[9]",
-            "DrinkTitle[9]",
-            "ShortList"
+            "CaffContent[6]",
+            "DrinkTitle[6]"
         ],
         "projectType": "native",
         "resources": {
@@ -23,7 +21,13 @@
         },
         "sdkVersion": "3",
         "targetPlatforms": [
-            "emery"
+            "aplite",
+            "basalt",
+            "chalk",
+            "diorite",
+            "emery",
+            "gabbro",
+            "flint"
         ],
         "uuid": "d128bfa9-0349-4d1f-83b6-b69037eb7e4a",
         "watchapp": {
