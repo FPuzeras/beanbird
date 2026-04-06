@@ -13,7 +13,8 @@
         "enableMultiJS": true,
         "messageKeys": [
             "CaffContent[6]",
-            "DrinkTitle[6]"
+            "DrinkTitle[6]",
+            "CustomDefault"
         ],
         "projectType": "native",
         "resources": {
@@ -25,9 +26,7 @@
             "basalt",
             "chalk",
             "diorite",
-            "emery",
-            "gabbro",
-            "flint"
+            "emery"
         ],
         "uuid": "d128bfa9-0349-4d1f-83b6-b69037eb7e4a",
         "watchapp": {

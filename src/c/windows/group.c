@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include "src/c/window_group.h"
+#include "src/c/windows/group.h"
 
 static Window *s_group_window;
 static ActionBarLayer *s_action_bar;
@@ -31,7 +31,7 @@ static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
-static void main_window_load(Window *window) {
+static void group_window_load(Window *window) {
   s_action_bar = action_bar_layer_create();
   action_bar_layer_add_to_window(s_action_bar, window);
   action_bar_layer_set_click_config_provider(s_action_bar, click_config_provider);
@@ -47,7 +47,6 @@ static void main_window_load(Window *window) {
   text_layer_set_text(s_text_select, drink_titles[1]);
   text_layer_set_text(s_text_bottom, drink_titles[2]);
 
-  
   text_layer_set_text_alignment(s_text_top, GTextAlignmentLeft);
   text_layer_set_text_alignment(s_text_select, GTextAlignmentLeft);
   text_layer_set_text_alignment(s_text_bottom, GTextAlignmentLeft);
@@ -60,9 +59,15 @@ static void main_window_load(Window *window) {
 //   s_up_icon = gbitmap_create_with_resource(RESOURCE_ID_ICON_UP);
 }
 
-static void main_window_unload(Window *window) {
+static void group_window_unload(Window *window) {
+  text_layer_destroy(s_text_top);
+  text_layer_destroy(s_text_select);
+  text_layer_destroy(s_text_bottom);
   
+  action_bar_layer_destroy(s_action_bar);
 //   gbitmap_destroy(s_up_icon);
+  
+  window_destroy(s_group_window);
 }
 
 void push_window_group(int16_t *caff_content, char (*titles)[STR_MAXLEN + 1]) {
@@ -72,8 +77,8 @@ void push_window_group(int16_t *caff_content, char (*titles)[STR_MAXLEN + 1]) {
   s_group_window = window_create();
   window_set_click_config_provider(s_group_window, click_config_provider);
   window_set_window_handlers(s_group_window, (WindowHandlers) {
-    .load = main_window_load,
-    .unload = main_window_unload,
+    .load = group_window_load,
+    .unload = group_window_unload,
   });
   window_stack_push(s_group_window, true);
 }

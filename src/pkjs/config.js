@@ -41,7 +41,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 32767,
+              "max": 999,
               "step": 1
             }
           }
@@ -73,7 +73,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 32767,
+              "max": 999,
               "step": 1
             }
           }
@@ -105,7 +105,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 32767,
+              "max": 999,
               "step": 1
             }
           }
@@ -147,7 +147,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 32767,
+              "max": 999,
               "step": 1
             }
           }
@@ -179,7 +179,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 32767,
+              "max": 999,
               "step": 1
             }
           }
@@ -211,12 +211,34 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 32767,
+              "max": 999,
               "step": 1
             }
           }
         ]
       }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Custom drink settings",
+        "size": 3
+      },
+      {
+        "type": "input",
+        "messageKey": "CustomDefault",
+        "label": "Custom drink default caffeine content (mg)",
+        "defaultValue": 100,
+        "attributes": {
+          "type": "number",
+          "min": 0,
+          "max": 999,
+          "step": 1
+        }
+      },
     ]
   },
   {
