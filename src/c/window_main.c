@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "src/c/window_main.h"
+#include "src/c/window_group.h"
 #include "src/c/settings.h"
 
 static Window *s_main_window;
@@ -11,13 +12,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  vibes_short_pulse();
-//   text_layer_set_text(s_text_layer, "Up");
+  push_window_group(&settings.caff_content[0], &settings.drink_titles[0]);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  vibes_short_pulse();
-//   text_layer_set_text(s_text_layer, "Down");
+    push_window_group(&settings.caff_content[3], &settings.drink_titles[3]);
 }
 
 static void click_config_provider(void *context) {  
