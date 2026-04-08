@@ -8,6 +8,10 @@
 typedef struct ClaySettings {
   int16_t caff_content[DRINK_COUNT];
   char drink_titles[DRINK_COUNT][STR_MAXLEN + 1];
+  uint16_t custom_caff;
+  uint16_t custom_step;
+  float elimination_constant;
+  float absorbtion_constant;
 } ClaySettings;
 
 extern ClaySettings settings;

@@ -8,7 +8,7 @@ static TextLayer *s_text_top;
 static TextLayer *s_text_select;
 static TextLayer *s_text_bottom;
 
-static GBitmap *s_up_icon;
+// static GBitmap *s_up_icon;
 
 static int16_t *drink_caff;
 static char (*drink_titles)[STR_MAXLEN+1];

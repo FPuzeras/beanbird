@@ -17,6 +17,12 @@ static void prv_default_settings() {
       strncpy(settings.drink_titles[i], default_titles[i], STR_MAXLEN);
       settings.drink_titles[i][STR_MAXLEN] = '\0';
   }
+  
+  settings.custom_caff = 100;
+  settings.custom_step = 5;
+  
+  settings.absorbtion_constant = get_ke_from_half_life(20);
+  settings.elimination_constant = get_ke_from_half_life(300);
 }
 
 static void prv_save_settings() {
@@ -33,9 +39,11 @@ void load_settings(void) {
 }
 
 void parse_inbox_settings(DictionaryIterator *iter) {
+  Tuple *tuple;
+  
   // load drinks
   for (uint32_t i = 0; i < DRINK_COUNT; i++) {
-    Tuple *tuple = dict_find(iter, MESSAGE_KEY_CaffContent + i);
+    tuple = dict_find(iter, MESSAGE_KEY_CaffContent + i);
     if (tuple) {
       settings.caff_content[i] = tuple->value->int16;
     }
@@ -44,6 +52,16 @@ void parse_inbox_settings(DictionaryIterator *iter) {
       strncpy(settings.drink_titles[i], tuple->value->cstring, STR_MAXLEN);
       settings.drink_titles[i][STR_MAXLEN] = '\0';
     }
+  }
+  
+  // Load custom page preferences
+  tuple = dict_find(iter, MESSAGE_KEY_CustomCaff);
+  if (tuple) {
+    settings.custom_caff = tuple->value->int16;
+  }
+  tuple = dict_find(iter, MESSAGE_KEY_CustomStep);
+  if (tuple) {
+    settings.custom_step = tuple->value->int16;
   }
   
   prv_save_settings();

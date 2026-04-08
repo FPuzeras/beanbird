@@ -229,7 +229,7 @@ module.exports = [
       },
       {
         "type": "input",
-        "messageKey": "CustomDefault",
+        "messageKey": "CustomCaff",
         "label": "Custom drink default caffeine content (mg)",
         "defaultValue": 100,
         "attributes": {
