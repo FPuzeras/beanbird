@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "src/c/windows/group.h"
+#include "src/c/modules/caffeine.h"
 
 static Window *s_group_window;
 static ActionBarLayer *s_action_bar;
@@ -13,16 +14,27 @@ static TextLayer *s_text_bottom;
 static int16_t *drink_caff;
 static char (*drink_titles)[STR_MAXLEN+1];
 
+static inline void prv_close() {
+  exit_reason_set(APP_EXIT_ACTION_PERFORMED_SUCCESSFULLY);
+  window_stack_pop_all(false);
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-//   text_layer_set_text(s_text_layer, "Select");
+  add_drink(drink_caff[1], 20);
+  
+  prv_close();
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-//   text_layer_set_text(s_text_layer, "Up");
+  add_drink(drink_caff[0], 20);
+  
+  prv_close();
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-//   text_layer_set_text(s_text_layer, "Down");
+  add_drink(drink_caff[2], 20);
+  
+  prv_close();
 }
 
 static void click_config_provider(void *context) {  

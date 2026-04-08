@@ -21,7 +21,7 @@ static void prv_default_settings() {
   settings.custom_caff = 100;
   settings.custom_step = 5;
   
-  settings.absorbtion_constant = get_ke_from_half_life(20);
+  settings.absorbtion_constant = get_ka_from_half_life(20);
   settings.elimination_constant = get_ke_from_half_life(300);
 }
 

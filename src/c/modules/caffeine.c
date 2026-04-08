@@ -183,3 +183,12 @@ uint16_t get_gut_caffeine() {
   
   return gut_caff;
 }
+
+void add_drink(int16_t miligrams, int16_t ingestion_duration) {
+  ingestion i = {
+    .dose = miligrams,
+    .duration = ingestion_duration,
+    .time = time(NULL)
+  };
+  prv_ingestion_push(i);
+}

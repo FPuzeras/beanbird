@@ -56,7 +56,7 @@ static void custom_window_load(Window *window) {
   s_center_text_layer = text_layer_create(GRect(0, CENTER_TEXT_OFFSET_H, bounds.size.w - ACTION_BAR_WIDTH, CENTER_TEXT_SIZE_H));
   text_layer_set_text_alignment(s_center_text_layer, GTextAlignmentCenter);
   text_layer_set_font(s_center_text_layer, fonts_get_system_font(CENTER_TEXT_FONT));
-  text_layer_set_text(s_center_text_layer, "0000");
+  text_layer_set_text(s_center_text_layer, "000");
 
   layer_add_child(window_layer, text_layer_get_layer(s_center_text_layer));
 }
