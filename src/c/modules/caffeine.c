@@ -8,7 +8,7 @@
 #define BUFFER_SIZE 32
 #define CONTRIBUTION_CUTOFF 0.5f
 #define EXPIRE_MAX_AGE (2 * SECONDS_PER_DAY)
-#define CACHE_SECONDS 10
+#define CACHE_SECONDS 2
 
 #define ke_s settings.elimination_constant
 #define ka_s settings.absorbtion_constant
@@ -27,10 +27,10 @@ typedef struct {
 static ingestion ingestion_buffer[BUFFER_SIZE];
 static BufferMetadata meta = { .head = -1, .count = 0 };
 
-
 time_t last_value = 0;
 uint16_t blood_caff = 0;
 uint16_t gut_caff = 0;
+uint16_t drink_caff = 0;
 
 static void prv_save_to_storage() {
     persist_write_data(STORAGE_KEY_INGESTION, ingestion_buffer, sizeof(ingestion_buffer));
@@ -112,6 +112,7 @@ void compute_caffeine() {
   
   float total_blood_mg = 0.0f;
   float total_gut_mg = 0.0f;
+  float total_drink_mg = 0.0f;
   
   ingestion* i = prv_ingestion_head();
   
@@ -162,6 +163,7 @@ void compute_caffeine() {
     } else {
         total_blood_mg += b_mg;
         total_gut_mg += g_mg;
+        total_drink_mg += (dose - b_mg - g_mg);
     }
     
     i = next_drink;
@@ -170,6 +172,7 @@ void compute_caffeine() {
   last_value = current_time;
   blood_caff = float_to_u16(total_blood_mg);
   gut_caff = float_to_u16(total_gut_mg);
+  drink_caff = float_to_u16(total_drink_mg);
 }
 
 uint16_t get_blood_caffeine() {
@@ -182,6 +185,12 @@ uint16_t get_gut_caffeine() {
   compute_caffeine();
   
   return gut_caff;
+}
+
+uint16_t get_pending_caffeine() {
+  compute_caffeine();
+  
+  return drink_caff;
 }
 
 void add_drink(int16_t miligrams, int16_t ingestion_duration) {
