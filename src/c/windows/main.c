@@ -6,29 +6,88 @@
 #include "src/c/modules/caffeine.h"
 #include "src/c/helpers.h"
 
+// --- PLATFORM SPECIFIC BEGIN ---
+#if defined(PBL_PLATFORM_EMERY)
+  #define SCREEN_W           200
+  #define SCREEN_H           228
+  #define CONTENT_W          (SCREEN_W - ACTION_BAR_WIDTH)
+  #define HALF_CONTENT_W     (CONTENT_W / 2)
+  #define SECTION_H          (SCREEN_H / 3)
+  
+  #define MARGIN_TOP         4
+  
+  #define LABEL_H            24
+  #define VALUE_H            36
+  #define SMALL_LABEL_H      18
+  #define SMALL_VALUE_H      30
+  
+  #define FONT_TOP_LABEL     FONT_KEY_GOTHIC_18_BOLD
+  #define FONT_TOP_VALUE     FONT_KEY_GOTHIC_28_BOLD
+  #define FONT_MID_LABEL     FONT_KEY_GOTHIC_18
+  #define FONT_MID_VALUE     FONT_KEY_GOTHIC_28_BOLD
+  #define FONT_BOT_LABEL     FONT_KEY_GOTHIC_18_BOLD
+  #define FONT_BOT_VALUE     FONT_KEY_GOTHIC_28_BOLD
+  #define FONT_BOT_SUB       FONT_KEY_GOTHIC_14
+
+  #define GUT_LABEL_TEXT     "GUT CAFF."
+  #define DRINK_LABEL_TEXT   "DRINK CAFF."
+  
+#elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
+  #define SCREEN_W           144
+  #define SCREEN_H           168
+  #define CONTENT_W          (SCREEN_W - ACTION_BAR_WIDTH)
+  #define HALF_CONTENT_W     (CONTENT_W / 2)
+  #define SECTION_H          (SCREEN_H / 3)
+  
+  #define MARGIN_TOP         3
+  
+  #define LABEL_H            16
+  #define VALUE_H            30
+  #define SMALL_LABEL_H      16
+  #define SMALL_VALUE_H      20
+  
+  #define FONT_TOP_LABEL     FONT_KEY_GOTHIC_14_BOLD
+  #define FONT_TOP_VALUE     FONT_KEY_GOTHIC_24_BOLD
+  #define FONT_MID_LABEL     FONT_KEY_GOTHIC_14
+  #define FONT_MID_VALUE     FONT_KEY_GOTHIC_24_BOLD
+  #define FONT_BOT_LABEL     FONT_KEY_GOTHIC_14_BOLD
+  #define FONT_BOT_VALUE     FONT_KEY_GOTHIC_18_BOLD
+  #define FONT_BOT_SUB       FONT_KEY_GOTHIC_14
+
+  #define GUT_LABEL_TEXT     "GUT"
+  #define DRINK_LABEL_TEXT   "DRINK"
+  
+#elif defined(PBL_PLATFORM_CHALK)
+  #error "Not implemented."
+#else
+  #error "Invalid target."
+#endif
+// --- PLATFORM SPECIFIC END ---
+
+#define TOP_VAL_Y          (MARGIN_TOP + LABEL_H)
+#define MID_SEC_Y          SECTION_H
+#define MID_LABEL_Y        (MID_SEC_Y + MARGIN_TOP)
+#define MID_VAL_Y          (MID_LABEL_Y + SMALL_LABEL_H)
+#define BOT_SEC_Y          (SECTION_H * 2)
+#define BOT_LABEL_Y        (BOT_SEC_Y + MARGIN_TOP)
+#define BOT_VAL_Y          (BOT_LABEL_Y + SMALL_LABEL_H)
+#define BOT_SUB_Y          (BOT_VAL_Y + SMALL_VALUE_H)
+
+#define REFRESH_MS         1100
+
+
 static Window *s_main_window;
 static ActionBarLayer *s_action_bar;
 static Layer *s_canvas_layer;
 
-// top section
-static TextLayer *s_caffeine_label_layer;
-static TextLayer *s_caffeine_value_layer;
-static BitmapLayer *s_logo_layer;
-static GBitmap *s_logo_bitmap;
+static TextLayer *s_caffeine_label_layer, *s_caffeine_value_layer;
+static TextLayer *s_pending_drink_label, *s_pending_drink_value;
+static TextLayer *s_pending_gut_label, *s_pending_gut_value;
+static TextLayer *s_sleep_label, *s_timer_layer, *s_sleep_sub_label;
 
-// middle section
-static TextLayer *s_pending_drink_label;
-static TextLayer *s_pending_drink_value;
+static char s_blood_mg_buf[8], s_gut_mg_buf[6], s_pending_mg_buf[6];
+static AppTimer* s_refresh_timer;
 
-static TextLayer *s_pending_gut_label;
-static TextLayer *s_pending_gut_value;
-
-// bottom section
-static TextLayer *s_sleep_label;
-static TextLayer *s_timer_layer;
-static TextLayer *s_sleep_sub_label;
-static BitmapLayer *s_zzz_icon_layer;
-static GBitmap *s_zzz_icon_bitmap;
 
 static AppTimer* s_refresh_timer;
 
@@ -50,31 +109,26 @@ static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
-// static void update_caffeine_text(void *_) {
-//   uint16_t b_mg = get_blood_caffeine();
-//   uint16_t g_mg = get_gut_caffeine();
-//   uint16_t p_mg = get_pending_caffeine();
-
-//   snprintf(s_center_text_buf, 5, "%04u", (unsigned)b_mg);
-//   snprintf(s_tr_text_buf, 5, "%04u", (unsigned)g_mg);
-//   snprintf(s_tl_text_buf, 5, "%04u", (unsigned)p_mg);
-
-
-//   text_layer_set_text(s_center_text_layer, s_center_text_buf);
-//   text_layer_set_text(s_tr_text_layer, s_tr_text_buf);
-//   text_layer_set_text(s_tl_text_layer, s_tl_text_buf);
-
+static void update_caffeine_text(void *_) {
+  caffeine_totals_t totals = get_caffeine_totals();
   
-//   s_refresh_timer = app_timer_register(2000, update_caffeine_text, NULL);
-// }
+  snprintf(s_blood_mg_buf, sizeof(s_blood_mg_buf), "%dmg", totals.blood_mg);
+  snprintf(s_gut_mg_buf, sizeof(s_gut_mg_buf), "%d", totals.gut_mg);
+  snprintf(s_pending_mg_buf, sizeof(s_pending_mg_buf), "%d",  totals.pending_mg);
+
+  text_layer_set_text(s_caffeine_value_layer, s_blood_mg_buf);
+  text_layer_set_text(s_pending_gut_value, s_gut_mg_buf);
+  text_layer_set_text(s_pending_drink_value, s_pending_mg_buf);
+  
+  // set warning colors
+  #ifdef PBL_IF_COLOR_ELSE
+  
+  #endif
+  
+  s_refresh_timer = app_timer_register(REFRESH_MS, update_caffeine_text, NULL);
+}
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
-  int w = bounds.size.w - ACTION_BAR_WIDTH;
-  int h = bounds.size.h;
-  int third_h = h / 3;
-  int half_w = w / 2;
-
   #ifdef PBL_COLOR
     graphics_context_set_stroke_color(ctx, GColorLightGray);
   #else
@@ -83,125 +137,76 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   
   graphics_context_set_stroke_width(ctx, 2);
   
-  graphics_draw_line(ctx, GPoint(0, third_h), GPoint(w, third_h));
-  graphics_draw_line(ctx, GPoint(0, third_h * 2), GPoint(w, third_h * 2));
-  graphics_draw_line(ctx, GPoint(half_w, third_h), GPoint(half_w, third_h * 2));
+  graphics_draw_line(ctx, GPoint(0, SECTION_H), GPoint(CONTENT_W, SECTION_H));
+  graphics_draw_line(ctx, GPoint(0, SECTION_H * 2), GPoint(CONTENT_W, SECTION_H * 2));
+  graphics_draw_line(ctx, GPoint(HALF_CONTENT_W, SECTION_H), GPoint(HALF_CONTENT_W, SECTION_H * 2));
 }
 
 static void main_window_load(Window *window) {
+  Layer *window_layer = window_get_root_layer(window);
+  
   s_action_bar = action_bar_layer_create();
   action_bar_layer_add_to_window(s_action_bar, window);
   action_bar_layer_set_click_config_provider(s_action_bar, click_config_provider);
   
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
-  
-  s_canvas_layer = layer_create(bounds);
+  s_canvas_layer = layer_create(GRect(0, 0, CONTENT_W, SCREEN_H));
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
-  
-  int w = bounds.size.w - ACTION_BAR_WIDTH;
-  int h = bounds.size.h;
-  int third_h = h / 3;
-  int half_w = w / 2;
-  
-  #ifdef PBL_ROUND
-    int margin_y = 15;
-  #else
-    int margin_y = 5;
-  #endif
-  
-//   s_logo_bitmap = gbitmap_create_with_resource(RESOURCE_ID_LOGO);
-//   s_logo_layer = bitmap_layer_create(GRect(margin_x, margin_y, 20, 20));
-//   bitmap_layer_set_bitmap(s_logo_layer, s_logo_bitmap);
-//   layer_add_child(window_layer, bitmap_layer_get_layer(s_logo_layer));
 
-  s_caffeine_label_layer = text_layer_create(GRect(0, margin_y, w, 20));
-  text_layer_set_text(s_caffeine_label_layer, "Blood Caffeine");
-  text_layer_set_font(s_caffeine_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  s_caffeine_label_layer = text_layer_create(GRect(0, MARGIN_TOP, CONTENT_W, LABEL_H));
+  text_layer_set_text(s_caffeine_label_layer, "BLOOD CAFFEINE");
+  text_layer_set_font(s_caffeine_label_layer, fonts_get_system_font(FONT_TOP_LABEL));
   text_layer_set_text_alignment(s_caffeine_label_layer, GTextAlignmentCenter);
   text_layer_set_background_color(s_caffeine_label_layer, GColorClear);
   layer_add_child(window_layer, text_layer_get_layer(s_caffeine_label_layer));
 
-  s_caffeine_value_layer = text_layer_create(GRect(0, margin_y + 20, w, 36));
-  text_layer_set_text(s_caffeine_value_layer, "125 mg");
-  text_layer_set_font(s_caffeine_value_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
+  s_caffeine_value_layer = text_layer_create(GRect(0, TOP_VAL_Y, CONTENT_W, VALUE_H));
+  text_layer_set_font(s_caffeine_value_layer, fonts_get_system_font(FONT_TOP_VALUE));
   text_layer_set_text_alignment(s_caffeine_value_layer, GTextAlignmentCenter);
   text_layer_set_background_color(s_caffeine_value_layer, GColorClear);
-  #ifdef PBL_COLOR
-    text_layer_set_text_color(s_caffeine_value_layer, GColorRed);
-  #endif
   layer_add_child(window_layer, text_layer_get_layer(s_caffeine_value_layer));
 
-  s_pending_drink_label = text_layer_create(GRect(0, third_h + 4, half_w, 18));
-  text_layer_set_text(s_pending_drink_label, "Pend. Drink:");
-  text_layer_set_font(s_pending_drink_label, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  s_pending_drink_label = text_layer_create(GRect(2, MID_LABEL_Y, HALF_CONTENT_W - 4, SMALL_LABEL_H));
+  text_layer_set_text(s_pending_drink_label, DRINK_LABEL_TEXT);
+  text_layer_set_font(s_pending_drink_label, fonts_get_system_font(FONT_MID_LABEL));
   text_layer_set_text_alignment(s_pending_drink_label, GTextAlignmentCenter);
-  text_layer_set_background_color(s_pending_drink_label, GColorClear);
   layer_add_child(window_layer, text_layer_get_layer(s_pending_drink_label));
 
-  s_pending_drink_value = text_layer_create(GRect(0, third_h + 20, half_w, 28));
-  text_layer_set_text(s_pending_drink_value, "40");
-  text_layer_set_font(s_pending_drink_value, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  s_pending_drink_value = text_layer_create(GRect(2, MID_VAL_Y, HALF_CONTENT_W - 4, VALUE_H));
+  text_layer_set_font(s_pending_drink_value, fonts_get_system_font(FONT_MID_VALUE));
   text_layer_set_text_alignment(s_pending_drink_value, GTextAlignmentCenter);
-  text_layer_set_background_color(s_pending_drink_value, GColorClear);
-  #ifdef PBL_COLOR
-    text_layer_set_text_color(s_pending_drink_value, GColorBlue);
-  #endif
   layer_add_child(window_layer, text_layer_get_layer(s_pending_drink_value));
 
-  s_pending_gut_label = text_layer_create(GRect(half_w, third_h + 4, half_w, 18));
-  text_layer_set_text(s_pending_gut_label, "Pend. Gut:");
-  text_layer_set_font(s_pending_gut_label, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  s_pending_gut_label = text_layer_create(GRect(HALF_CONTENT_W + 2, MID_LABEL_Y, HALF_CONTENT_W - 4, SMALL_LABEL_H));
+  text_layer_set_text(s_pending_gut_label, GUT_LABEL_TEXT);
+  text_layer_set_font(s_pending_gut_label, fonts_get_system_font(FONT_MID_LABEL));
   text_layer_set_text_alignment(s_pending_gut_label, GTextAlignmentCenter);
-  text_layer_set_background_color(s_pending_gut_label, GColorClear);
   layer_add_child(window_layer, text_layer_get_layer(s_pending_gut_label));
 
-  s_pending_gut_value = text_layer_create(GRect(half_w, third_h + 20, half_w, 28));
-  text_layer_set_text(s_pending_gut_value, "15");
-  text_layer_set_font(s_pending_gut_value, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  s_pending_gut_value = text_layer_create(GRect(HALF_CONTENT_W + 2, MID_VAL_Y, HALF_CONTENT_W - 4, VALUE_H));
+  text_layer_set_font(s_pending_gut_value, fonts_get_system_font(FONT_MID_VALUE));
   text_layer_set_text_alignment(s_pending_gut_value, GTextAlignmentCenter);
-  text_layer_set_background_color(s_pending_gut_value, GColorClear);
-  #ifdef PBL_COLOR
-    text_layer_set_text_color(s_pending_gut_value, GColorGreen);
-  #endif
   layer_add_child(window_layer, text_layer_get_layer(s_pending_gut_value));
 
-
-  int bot_y = third_h * 2;
-
-  s_sleep_label = text_layer_create(GRect(0, bot_y + 2, w, 18));
-  text_layer_set_text(s_sleep_label, "Sleep Ready:");
-  text_layer_set_font(s_sleep_label, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+  s_sleep_label = text_layer_create(GRect(0, BOT_LABEL_Y, CONTENT_W, SMALL_LABEL_H));
+  text_layer_set_text(s_sleep_label, "SLEEP READY:");
+  text_layer_set_font(s_sleep_label, fonts_get_system_font(FONT_BOT_LABEL));
   text_layer_set_text_alignment(s_sleep_label, GTextAlignmentCenter);
-  text_layer_set_background_color(s_sleep_label, GColorClear);
   layer_add_child(window_layer, text_layer_get_layer(s_sleep_label));
 
-  s_timer_layer = text_layer_create(GRect(0, bot_y + 20, w, 28));
-  text_layer_set_text(s_timer_layer, "04:30:00");
-  text_layer_set_font(s_timer_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  s_timer_layer = text_layer_create(GRect(0, BOT_VAL_Y, CONTENT_W, SMALL_VALUE_H));
+  text_layer_set_text(s_timer_layer, "00:00:00");
+  text_layer_set_font(s_timer_layer, fonts_get_system_font(FONT_BOT_VALUE));
   text_layer_set_text_alignment(s_timer_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(s_timer_layer, GColorClear);
-  #ifdef PBL_COLOR
-    text_layer_set_text_color(s_timer_layer, GColorPurple);
-  #endif
   layer_add_child(window_layer, text_layer_get_layer(s_timer_layer));
 
-  s_sleep_sub_label = text_layer_create(GRect(0, bot_y + 48, w, 18));
-  text_layer_set_text(s_sleep_sub_label, "until < 50mg");
-  text_layer_set_font(s_sleep_sub_label, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  s_sleep_sub_label = text_layer_create(GRect(0, BOT_SUB_Y, CONTENT_W, SMALL_LABEL_H));
+  text_layer_set_text(s_sleep_sub_label, "until <50mg");
+  text_layer_set_font(s_sleep_sub_label, fonts_get_system_font(FONT_BOT_SUB));
   text_layer_set_text_alignment(s_sleep_sub_label, GTextAlignmentCenter);
-  text_layer_set_background_color(s_sleep_sub_label, GColorClear);
   layer_add_child(window_layer, text_layer_get_layer(s_sleep_sub_label));
-
-//   s_zzz_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_ZZZ_ICON);
-//   #ifdef PBL_ROUND
-//     s_zzz_icon_layer = bitmap_layer_create(GRect((w / 2) + 45, bot_y + 24, 20, 20));
-//   #else
-//     s_zzz_icon_layer = bitmap_layer_create(GRect(w - 30, bot_y + 24, 20, 20));
-//   #endif
-//   bitmap_layer_set_bitmap(s_zzz_icon_layer, s_zzz_icon_bitmap);
-//   layer_add_child(window_layer, bitmap_layer_get_layer(s_zzz_icon_layer));
+  
+  update_caffeine_text(NULL);
 }
 
 static void main_window_unload(Window *window) {
@@ -209,25 +214,15 @@ static void main_window_unload(Window *window) {
   action_bar_layer_destroy(s_action_bar);
   layer_destroy(s_canvas_layer);
   
-  // top text & bitmaps
   text_layer_destroy(s_caffeine_label_layer);
   text_layer_destroy(s_caffeine_value_layer);
-  bitmap_layer_destroy(s_logo_layer);
-  gbitmap_destroy(s_logo_bitmap);
-
-  // middle text & bitmaps
   text_layer_destroy(s_pending_drink_label);
   text_layer_destroy(s_pending_drink_value);
-
   text_layer_destroy(s_pending_gut_label);
   text_layer_destroy(s_pending_gut_value);
-
-  // bottom text & bitmaps
   text_layer_destroy(s_sleep_label);
   text_layer_destroy(s_timer_layer);
   text_layer_destroy(s_sleep_sub_label);
-  bitmap_layer_destroy(s_zzz_icon_layer);
-  gbitmap_destroy(s_zzz_icon_bitmap);
   
   window_destroy(s_main_window);
 }

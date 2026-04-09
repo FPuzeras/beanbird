@@ -2,14 +2,16 @@
 #include <pebble.h>
 #include <stdint.h>
 
+typedef struct {
+  uint16_t pending_mg;
+  uint16_t gut_mg;
+  uint16_t blood_mg;
+} caffeine_totals_t;
+
 void caffeine_init();
 
 void add_drink(int16_t miligrams, int16_t ingestion_duration);
 
-uint16_t get_blood_caffeine();
-
-uint16_t get_gut_caffeine();
-
-uint16_t get_pending_caffeine();
+caffeine_totals_t get_caffeine_totals();
 
 time_t get_curfew();

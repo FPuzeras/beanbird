@@ -53,9 +53,9 @@ static void custom_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  s_center_text_layer = text_layer_create(GRect(0, CENTER_TEXT_OFFSET_H, bounds.size.w - ACTION_BAR_WIDTH, CENTER_TEXT_SIZE_H));
+  s_center_text_layer = text_layer_create(GRect(0, 80, bounds.size.w - ACTION_BAR_WIDTH, 30));
   text_layer_set_text_alignment(s_center_text_layer, GTextAlignmentCenter);
-  text_layer_set_font(s_center_text_layer, fonts_get_system_font(CENTER_TEXT_FONT));
+  text_layer_set_font(s_center_text_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_text(s_center_text_layer, "000");
 
   layer_add_child(window_layer, text_layer_get_layer(s_center_text_layer));

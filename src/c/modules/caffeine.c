@@ -8,7 +8,7 @@
 #define BUFFER_SIZE 32
 #define CONTRIBUTION_CUTOFF 0.5f
 #define EXPIRE_MAX_AGE (2 * SECONDS_PER_DAY)
-#define CACHE_SECONDS 2
+#define CACHE_SECONDS 1
 
 #define ke_s settings.elimination_constant
 #define ka_s settings.absorbtion_constant
@@ -28,9 +28,11 @@ static ingestion ingestion_buffer[BUFFER_SIZE];
 static BufferMetadata meta = { .head = -1, .count = 0 };
 
 time_t last_value = 0;
-uint16_t blood_caff = 0;
-uint16_t gut_caff = 0;
-uint16_t drink_caff = 0;
+
+float caffeine_blood_mg = 0.0f;
+float caffeine_gut_mg = 0.0f;
+float caffeine_pending_mg = 0.0f;
+
 
 static void prv_save_to_storage() {
     persist_write_data(STORAGE_KEY_INGESTION, ingestion_buffer, sizeof(ingestion_buffer));
@@ -100,19 +102,15 @@ void caffeine_init() {
   prv_ingestion_init();
 }
 
-void compute_caffeine() {
-  time_t current_time = time(NULL);
-  
-  if (current_time < last_value + CACHE_SECONDS)
-    return;
-
+void compute_caffeine(time_t current_time) {
   const float k_diff = ka_s - ke_s;
   const float inv_diff = (fabsf(k_diff) < 1e-7f) ? 1000000.0f : (1.0f / k_diff);
   const float inv_ka = 1.0f / ka_s;
   
-  float total_blood_mg = 0.0f;
-  float total_gut_mg = 0.0f;
-  float total_drink_mg = 0.0f;
+  caffeine_blood_mg = 0.0f;
+  caffeine_gut_mg = 0.0f;
+  caffeine_pending_mg = 0.0f;
+
   
   ingestion* i = prv_ingestion_head();
   
@@ -161,36 +159,30 @@ void compute_caffeine() {
     if (t_elapsed > d_sec && b_mg < CONTRIBUTION_CUTOFF) {
         prv_ingestion_remove(i);
     } else {
-        total_blood_mg += b_mg;
-        total_gut_mg += g_mg;
-        total_drink_mg += (dose - b_mg - g_mg);
+        caffeine_blood_mg += b_mg;
+        caffeine_gut_mg += g_mg;
+        caffeine_pending_mg += (dose - b_mg - g_mg);
     }
     
     i = next_drink;
   }
   
   last_value = current_time;
-  blood_caff = float_to_u16(total_blood_mg);
-  gut_caff = float_to_u16(total_gut_mg);
-  drink_caff = float_to_u16(total_drink_mg);
 }
 
-uint16_t get_blood_caffeine() {
-  compute_caffeine();
-    
-  return blood_caff;
-}
-
-uint16_t get_gut_caffeine() {
-  compute_caffeine();
+caffeine_totals_t get_caffeine_totals() {
+  time_t current_time = time(NULL);
   
-  return gut_caff;
-}
-
-uint16_t get_pending_caffeine() {
-  compute_caffeine();
+  if (current_time > last_value + CACHE_SECONDS)
+    compute_caffeine(current_time);
   
-  return drink_caff;
+  caffeine_totals_t totals = {
+    .blood_mg = float_to_u16(caffeine_blood_mg),
+    .gut_mg = float_to_u16(caffeine_gut_mg),
+    .pending_mg = float_to_u16(caffeine_pending_mg)
+  };
+  
+  return totals;
 }
 
 void add_drink(int16_t miligrams, int16_t ingestion_duration) {
