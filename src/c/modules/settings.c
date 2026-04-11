@@ -21,6 +21,10 @@ static void prv_default_settings() {
   settings.custom_caff = 100;
   settings.custom_step = 5;
   
+  settings.drink_time[0] = 5;
+  settings.drink_time[1] = 15;
+  settings.drink_time[2] = 30;
+  
   settings.absorbtion_constant = get_ka_from_half_life(20);
   settings.elimination_constant = get_ke_from_half_life(300);
 }
@@ -54,15 +58,31 @@ void parse_inbox_settings(DictionaryIterator *iter) {
     }
   }
   
-  // Load custom page preferences
+  // load drink timings
+  tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 0);
+  if (tuple) {
+    settings.drink_time[0] = tuple->value->int8;
+  }
+  tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 1);
+  if (tuple) {
+    settings.drink_time[1] = tuple->value->int8;
+  }
+  tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 2);
+  if (tuple) {
+    settings.drink_time[2] = tuple->value->int8;
+  }
+  
+  // load custom page preferences
   tuple = dict_find(iter, MESSAGE_KEY_CustomCaff);
   if (tuple) {
     settings.custom_caff = tuple->value->int16;
   }
   tuple = dict_find(iter, MESSAGE_KEY_CustomStep);
   if (tuple) {
-    settings.custom_step = tuple->value->int16;
+    settings.custom_step = tuple->value->int8;
   }
+  // load model constants
+  
   
   prv_save_settings();
 }

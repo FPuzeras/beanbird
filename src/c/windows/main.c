@@ -10,9 +10,6 @@
 #if defined(PBL_PLATFORM_EMERY)
   #define SCREEN_W           200
   #define SCREEN_H           228
-  #define CONTENT_W          (SCREEN_W - ACTION_BAR_WIDTH)
-  #define HALF_CONTENT_W     (CONTENT_W / 2)
-  #define SECTION_H          (SCREEN_H / 3)
   
   #define MARGIN_TOP         4
   
@@ -35,9 +32,6 @@
 #elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
   #define SCREEN_W           144
   #define SCREEN_H           168
-  #define CONTENT_W          (SCREEN_W - ACTION_BAR_WIDTH)
-  #define HALF_CONTENT_W     (CONTENT_W / 2)
-  #define SECTION_H          (SCREEN_H / 3)
   
   #define MARGIN_TOP         3
   
@@ -63,6 +57,10 @@
   #error "Invalid target."
 #endif
 // --- PLATFORM SPECIFIC END ---
+
+#define CONTENT_W          (SCREEN_W - ACTION_BAR_WIDTH)
+#define HALF_CONTENT_W     (CONTENT_W / 2)
+#define SECTION_H          (SCREEN_H / 3)
 
 #define TOP_VAL_Y          (MARGIN_TOP + LABEL_H)
 #define MID_SEC_Y          SECTION_H
@@ -120,9 +118,8 @@ static void update_caffeine_text(void *_) {
   text_layer_set_text(s_pending_gut_value, s_gut_mg_buf);
   text_layer_set_text(s_pending_drink_value, s_pending_mg_buf);
   
-  // set warning colors
   #ifdef PBL_IF_COLOR_ELSE
-  
+  // set text color based on limtis  
   #endif
   
   s_refresh_timer = app_timer_register(REFRESH_MS, update_caffeine_text, NULL);

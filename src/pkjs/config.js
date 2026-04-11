@@ -239,6 +239,64 @@ module.exports = [
           "step": 1
         }
       },
+      {
+        "type": "input",
+        "messageKey": "CustomStep",
+        "label": "Custom drink adjustment step (mg)",
+        "defaultValue": 5,
+        "attributes": {
+          "type": "number",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        }
+      },
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Drinking duration preferences",
+        "size": 3
+      },
+      {
+        "type": "input",
+        "messageKey": "DrinkTiming[0]",
+        "label": "Short drink duration (minutes)",
+        "defaultValue": 5,
+        "attributes": {
+          "type": "number",
+          "min": 1,
+          "max": 120,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "DrinkTiming[1]",
+        "label": "Medium drink duration (minutes)",
+        "defaultValue": 15,
+        "attributes": {
+          "type": "number",
+          "min": 1,
+          "max": 120,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "DrinkTiming[2]",
+        "label": "Long drink duration (minutes)",
+        "defaultValue": 30,
+        "attributes": {
+          "type": "number",
+          "min": 1,
+          "max": 120,
+          "step": 1
+        }
+      },
     ]
   },
   {

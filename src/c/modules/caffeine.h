@@ -10,8 +10,6 @@ typedef struct {
 
 void caffeine_init();
 
-void add_drink(int16_t miligrams, int16_t ingestion_duration);
+void add_drink(int16_t miligrams, int8_t ingestion_duration);
 
 caffeine_totals_t get_caffeine_totals();
-
-time_t get_curfew();

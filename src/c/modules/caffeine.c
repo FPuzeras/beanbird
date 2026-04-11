@@ -16,7 +16,7 @@
 typedef struct {
   time_t time;
   int16_t dose;
-  int16_t duration;
+  int8_t duration;
 } ingestion;
 
 typedef struct {
@@ -185,7 +185,7 @@ caffeine_totals_t get_caffeine_totals() {
   return totals;
 }
 
-void add_drink(int16_t miligrams, int16_t ingestion_duration) {
+void add_drink(int16_t miligrams, int8_t ingestion_duration) {
   ingestion i = {
     .dose = miligrams,
     .duration = ingestion_duration,

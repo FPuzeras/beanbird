@@ -15,7 +15,8 @@
             "CaffContent[6]",
             "DrinkTitle[6]",
             "CustomCaff",
-            "CustomStep"
+            "CustomStep",
+            "DrinkTiming[3]"
         ],
         "projectType": "native",
         "resources": {

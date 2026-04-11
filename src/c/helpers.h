@@ -1,4 +1,5 @@
 #pragma once
+#include <pebble.h>
 #include <stdint.h>
 #include <math.h>
 
@@ -25,4 +26,9 @@ static inline float get_ka_from_half_life(int16_t abs_half_life_min) {
 
     // ln(2) approx 0.693147f
     return 0.69314718f / (abs_half_life_min * 60);
+}
+
+static inline void prv_post_caff_added() {
+  exit_reason_set(APP_EXIT_ACTION_PERFORMED_SUCCESSFULLY);
+  window_stack_pop_all(false);
 }

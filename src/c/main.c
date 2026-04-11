@@ -11,7 +11,7 @@ static void init(void) {
   load_settings();
   caffeine_init();
   app_message_register_inbox_received(inbox_received_handler);
-  app_message_open(128, 0);
+  app_message_open(256, 0);
   push_window_main();
 }
 
