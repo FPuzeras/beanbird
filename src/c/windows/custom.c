@@ -67,7 +67,9 @@ static void select_long_handler(ClickRecognizerRef recognizer, void *context) {
 static void refresh_caffeine() {
   snprintf(s_caffeine_buf, sizeof(s_caffeine_buf), "%dmg", s_caffeine);
   
+  #ifdef PBL_COLOR
   // set text color based on limtis
+  #endif
   
   layer_mark_dirty(text_layer_get_layer(s_caffeine_text_layer));
 };

@@ -118,8 +118,14 @@ static void update_caffeine_text(void *_) {
   text_layer_set_text(s_pending_gut_value, s_gut_mg_buf);
   text_layer_set_text(s_pending_drink_value, s_pending_mg_buf);
   
-  #ifdef PBL_IF_COLOR_ELSE
-  // set text color based on limtis  
+  #ifdef PBL_COLOR
+  if (totals.blood_mg > settings.maximum_mg) {
+    text_layer_set_text_color(s_caffeine_value_layer, GColorDarkCandyAppleRed);
+  } else if (totals.blood_mg >= settings.minimum_mg) {
+    text_layer_set_text_color(s_caffeine_value_layer, GColorBlack);
+  } else {
+    text_layer_set_text_color(s_caffeine_value_layer, GColorCadetBlue);
+  }
   #endif
   
   s_refresh_timer = app_timer_register(REFRESH_MS, update_caffeine_text, NULL);
@@ -222,6 +228,10 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_sleep_sub_label);
   
   window_destroy(s_main_window);
+}
+
+void refresh_stats() {
+  // TODO
 }
 
 void push_window_main() {

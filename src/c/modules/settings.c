@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "src/c/modules/settings.h"
+#include "src/c/modules/caffeine.h"
 #include "src/c/helpers.h"
 
 ClaySettings settings;
@@ -27,6 +28,11 @@ static void prv_default_settings() {
   
   settings.absorbtion_constant = get_ka_from_half_life(20);
   settings.elimination_constant = get_ke_from_half_life(300);
+  
+  #ifdef PBL_COLOR
+    settings.minimum_mg = 130;
+    settings.maximum_mg = 170;
+  #endif
 }
 
 static void prv_save_settings() {
@@ -44,6 +50,7 @@ void load_settings(void) {
 
 void parse_inbox_settings(DictionaryIterator *iter) {
   Tuple *tuple;
+  bool recalculate_stats = false;
   
   // load drinks
   for (uint32_t i = 0; i < DRINK_COUNT; i++) {
@@ -81,8 +88,33 @@ void parse_inbox_settings(DictionaryIterator *iter) {
   if (tuple) {
     settings.custom_step = tuple->value->int8;
   }
-  // load model constants
   
+  // load model constants
+  tuple = dict_find(iter, MESSAGE_KEY_EliminationConst);
+  if (tuple) {
+    recalculate_stats = true;
+    settings.elimination_constant = tuple->value->int16;
+  }
+  tuple = dict_find(iter, MESSAGE_KEY_AbsorbtionConst);
+  if (tuple) {
+    recalculate_stats = true;
+    settings.absorbtion_constant = tuple->value->int8;
+  }
+  
+  if (recalculate_stats) {
+    calculate_caffeine_stats();
+  }
+  
+   #ifdef PBL_COLOR
+    tuple = dict_find(iter, MESSAGE_KEY_PreferMin);
+    if (tuple) {
+      settings.minimum_mg = tuple->value->int16;
+    } 
+    tuple = dict_find(iter, MESSAGE_KEY_PreferMax);
+    if (tuple) {
+      settings.maximum_mg = tuple->value->int16;
+    }
+  #endif
   
   prv_save_settings();
 }

@@ -224,40 +224,6 @@ module.exports = [
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Custom drink settings",
-        "size": 3
-      },
-      {
-        "type": "input",
-        "messageKey": "CustomCaff",
-        "label": "Custom drink default caffeine content (mg)",
-        "defaultValue": 100,
-        "attributes": {
-          "type": "number",
-          "min": 0,
-          "max": 999,
-          "step": 1
-        }
-      },
-      {
-        "type": "input",
-        "messageKey": "CustomStep",
-        "label": "Custom drink adjustment step (mg)",
-        "defaultValue": 5,
-        "attributes": {
-          "type": "number",
-          "min": 0,
-          "max": 100,
-          "step": 1
-        }
-      },
-    ]
-  },
-  {
-    "type": "section",
-    "items": [
-      {
-        "type": "heading",
         "defaultValue": "Drinking duration preferences",
         "size": 3
       },
@@ -294,6 +260,123 @@ module.exports = [
           "type": "number",
           "min": 1,
           "max": 120,
+          "step": 1
+        }
+      },
+    ]
+  },
+  {
+    "type": "section",
+    "capabilities": ["COLOR"],
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Color settings",
+        "size": 3
+      },
+      {
+        "type": "input",
+        "messageKey": "PreferMin",
+        "label": "Minimum prefered blood content (mg)",
+        "defaultValue": 120,
+        "attributes": {
+          "type": "number",
+          "min": 0,
+          "max": 999,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "PreferMax",
+        "label": "Maximum prefered blood content (mg)",
+        "defaultValue": 170,
+        "attributes": {
+          "type": "number",
+          "min": 0,
+          "max": 999,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "AbsorbtionConst",
+        "label": "Absorbtion (gut to blood) half-life (minutes)",
+        "defaultValue": 20,
+        "attributes": {
+          "type": "number",
+          "min": 1,
+          "max": 120,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "EliminationConst",
+        "label": "Elimination (decay) half-life (minutes)",
+        "defaultValue": 300,
+        "attributes": {
+          "type": "number",
+          "min": 1,
+          "max": 1600,
+          "step": 1
+        }
+      },
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Advanced settings",
+        "size": 3
+      },
+      {
+        "type": "input",
+        "messageKey": "CustomCaff",
+        "label": "Custom drink default caffeine content (mg)",
+        "defaultValue": 100,
+        "attributes": {
+          "type": "number",
+          "min": 0,
+          "max": 999,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "CustomStep",
+        "label": "Custom drink adjustment step (mg)",
+        "defaultValue": 5,
+        "attributes": {
+          "type": "number",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "AbsorbtionConst",
+        "label": "Absorbtion (gut to blood) half-life (minutes)",
+        "defaultValue": 20,
+        "attributes": {
+          "type": "number",
+          "min": 1,
+          "max": 120,
+          "step": 1
+        }
+      },
+      {
+        "type": "input",
+        "messageKey": "EliminationConst",
+        "label": "Elimination (decay) half-life (minutes)",
+        "defaultValue": 300,
+        "attributes": {
+          "type": "number",
+          "min": 1,
+          "max": 1600,
           "step": 1
         }
       },

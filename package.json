@@ -16,7 +16,11 @@
             "DrinkTitle[6]",
             "CustomCaff",
             "CustomStep",
-            "DrinkTiming[3]"
+            "DrinkTiming[3]",
+            "AbsorbtionConst",
+            "EliminationConst",
+            "PreferMin",
+            "PreferMax"
         ],
         "projectType": "native",
         "resources": {

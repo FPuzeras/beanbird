@@ -2,10 +2,12 @@
 #include <pebble.h>
 #include <stdint.h>
 #include <math.h>
+#include "src/c/modules/caffeine.h"
 
 #define STORAGE_KEY_SETTINGS 1
 #define STORAGE_KEY_INGESTION 2
 #define STORAGE_KEY_INGESTION_META 3
+#define STORAGE_KEY_CAFFEINE_STATS 4
 
 static inline uint16_t float_to_u16(float f) {
     if (isnan(f)) return 0;
@@ -29,6 +31,7 @@ static inline float get_ka_from_half_life(int16_t abs_half_life_min) {
 }
 
 static inline void prv_post_caff_added() {
+  calculate_caffeine_stats();
   exit_reason_set(APP_EXIT_ACTION_PERFORMED_SUCCESSFULLY);
   window_stack_pop_all(false);
 }

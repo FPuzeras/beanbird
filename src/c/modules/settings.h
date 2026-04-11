@@ -11,11 +11,16 @@ typedef struct ClaySettings {
   
   int8_t drink_time[3];
   
-  uint16_t custom_caff;
+  int16_t custom_caff;
   int8_t custom_step;
   
   float elimination_constant;
   float absorbtion_constant;
+  
+  #ifdef PBL_COLOR
+    int16_t minimum_mg;
+    int16_t maximum_mg;
+  #endif
 } ClaySettings;
 
 extern ClaySettings settings;
