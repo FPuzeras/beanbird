@@ -26,8 +26,8 @@ static void prv_default_settings() {
   settings.drink_time[1] = 15;
   settings.drink_time[2] = 30;
   
-  settings.absorbtion_constant = get_ka_from_half_life(20);
-  settings.elimination_constant = get_ke_from_half_life(300);
+  settings.half_life_elim = 300;
+  settings.half_life_abs = 20;
   
   #ifdef PBL_COLOR
     settings.minimum_mg = 130;
@@ -41,7 +41,8 @@ static void prv_save_settings() {
 
 static void prv_load_settings() {
   prv_default_settings();
-  persist_read_data(STORAGE_KEY_SETTINGS, &settings, sizeof(settings));
+  if (persist_exists(STORAGE_KEY_SETTINGS))
+    persist_read_data(STORAGE_KEY_SETTINGS, &settings, sizeof(settings));
 }
 
 void load_settings(void) {
@@ -50,7 +51,7 @@ void load_settings(void) {
 
 void parse_inbox_settings(DictionaryIterator *iter) {
   Tuple *tuple;
-  bool recalculate_stats = false;
+  bool recalculate = false;
   
   // load drinks
   for (uint32_t i = 0; i < DRINK_COUNT; i++) {
@@ -90,18 +91,18 @@ void parse_inbox_settings(DictionaryIterator *iter) {
   }
   
   // load model constants
-  tuple = dict_find(iter, MESSAGE_KEY_EliminationConst);
+  tuple = dict_find(iter, MESSAGE_KEY_EliminationHL);
   if (tuple) {
-    recalculate_stats = true;
-    settings.elimination_constant = tuple->value->int16;
+    recalculate = true;
+    settings.half_life_elim = tuple->value->int16;
   }
-  tuple = dict_find(iter, MESSAGE_KEY_AbsorbtionConst);
+  tuple = dict_find(iter, MESSAGE_KEY_AbsorbtionHL);
   if (tuple) {
-    recalculate_stats = true;
-    settings.absorbtion_constant = tuple->value->int8;
+    settings.half_life_abs = tuple->value->int8;
   }
   
-  if (recalculate_stats) {
+  if (recalculate) {
+    metabolism_update_settings(settings.half_life_elim, settings.half_life_abs);
     calculate_caffeine_stats();
   }
   

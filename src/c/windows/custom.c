@@ -46,7 +46,7 @@ static Window *s_custom_window;
 static ActionBarLayer *s_action_bar;
 static TextLayer *s_caffeine_text_layer;
 
-static char s_caffeine_buf[8];
+static char s_caffeine_buf[9];
 static int16_t s_caffeine;
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {

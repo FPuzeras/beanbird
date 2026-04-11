@@ -14,8 +14,8 @@ typedef struct ClaySettings {
   int16_t custom_caff;
   int8_t custom_step;
   
-  float elimination_constant;
-  float absorbtion_constant;
+  int16_t half_life_elim;
+  int8_t half_life_abs;
   
   #ifdef PBL_COLOR
     int16_t minimum_mg;

@@ -4,12 +4,12 @@
         "@rebble/clay": "^1.0.8"
     },
     "keywords": [],
-    "name": "beanbird",
+    "name": "halflife",
     "pebble": {
         "capabilities": [
             "configurable"
         ],
-        "displayName": "BeanBird",
+        "displayName": "HalfLife - Smart Caffeine Tracker",
         "enableMultiJS": true,
         "messageKeys": [
             "CaffContent[6]",
@@ -17,8 +17,8 @@
             "CustomCaff",
             "CustomStep",
             "DrinkTiming[3]",
-            "AbsorbtionConst",
-            "EliminationConst",
+            "AbsorbtionHL",
+            "EliminationHL",
             "PreferMin",
             "PreferMax"
         ],

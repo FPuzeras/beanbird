@@ -1,7 +1,7 @@
 module.exports = [
   {
     "type": "heading",
-    "defaultValue": "BeanBird Settings"
+    "defaultValue": "HalfLife Settings"
   },
   {
     "type": "text",
@@ -297,31 +297,7 @@ module.exports = [
           "max": 999,
           "step": 1
         }
-      },
-      {
-        "type": "input",
-        "messageKey": "AbsorbtionConst",
-        "label": "Absorbtion (gut to blood) half-life (minutes)",
-        "defaultValue": 20,
-        "attributes": {
-          "type": "number",
-          "min": 1,
-          "max": 120,
-          "step": 1
-        }
-      },
-      {
-        "type": "input",
-        "messageKey": "EliminationConst",
-        "label": "Elimination (decay) half-life (minutes)",
-        "defaultValue": 300,
-        "attributes": {
-          "type": "number",
-          "min": 1,
-          "max": 1600,
-          "step": 1
-        }
-      },
+      }
     ]
   },
   {
@@ -358,7 +334,7 @@ module.exports = [
       },
       {
         "type": "input",
-        "messageKey": "AbsorbtionConst",
+        "messageKey": "AbsorbtionHL",
         "label": "Absorbtion (gut to blood) half-life (minutes)",
         "defaultValue": 20,
         "attributes": {
@@ -370,7 +346,7 @@ module.exports = [
       },
       {
         "type": "input",
-        "messageKey": "EliminationConst",
+        "messageKey": "EliminationHL",
         "label": "Elimination (decay) half-life (minutes)",
         "defaultValue": 300,
         "attributes": {
