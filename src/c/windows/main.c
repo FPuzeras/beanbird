@@ -27,9 +27,6 @@
 
   #define GUT_LABEL_TEXT     "GUT CAFF."
   #define DRINK_LABEL_TEXT   "DRINK CAFF."
-
-  #define PEAK_LABEL_FMT     "%dmg in %02d:%02d:%02d"
-  #define SLEEP_LABEL_FMT    "<%dmg in %02d:%02d:%02d"
   
 #elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
   #define SCREEN_W           144
@@ -52,9 +49,6 @@
   #define GUT_LABEL_TEXT     "GUT"
   #define DRINK_LABEL_TEXT   "DRINK"
 
-  #define PEAK_LABEL_FMT     "%dmg %02d:%02d:%02d"
-  #define SLEEP_LABEL_FMT    "<%dmg %02d:%02d:%02d"
-  
 #elif defined(PBL_PLATFORM_CHALK)
   #error "Not implemented."
 #else
@@ -97,6 +91,11 @@ static GBitmap *s_icon_up;
 static GBitmap *s_icon_more;
 static GBitmap *s_icon_down;
 
+static GBitmap *s_icon_sleep;
+static GBitmap *s_icon_peak;
+
+static BitmapLayer *s_sleep_layer;
+static BitmapLayer *s_peak_layer;
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   push_window_custom();
@@ -128,14 +127,14 @@ static void update_caffeine_text(void *_) {
   
   int sleep_time = current_time > caff_stats.sleep_time ? 0 : caff_stats.sleep_time - current_time ;
   
-  snprintf(s_sleep_buf, sizeof(s_sleep_buf), SLEEP_LABEL_FMT, 
+  snprintf(s_sleep_buf, sizeof(s_sleep_buf), "<%dmg %02d:%02d:%02d", 
            settings.sleep_mg,
            sleep_time / SECONDS_PER_DAY,
            (sleep_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
            sleep_time % SECONDS_PER_MINUTE);
   
   int peak_time = current_time > caff_stats.peak_time ? 0 : caff_stats.peak_time - current_time;
-  snprintf(s_peak_buf, sizeof(s_peak_buf), PEAK_LABEL_FMT, 
+  snprintf(s_peak_buf, sizeof(s_peak_buf), "%dmg %02d:%02d:%02d", 
            caff_stats.peak_mg,
            peak_time / SECONDS_PER_DAY,
            (peak_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
@@ -191,6 +190,9 @@ static void main_window_load(Window *window) {
   s_icon_more = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_MORE);
   s_icon_down = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_DOWN);
   
+  s_icon_sleep = gbitmap_create_with_resource(RESOURCE_ID_ICON_SLEEP);
+  s_icon_peak = gbitmap_create_with_resource(RESOURCE_ID_ICON_PEAK);
+  
   action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_up);
   action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_more);
   action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_down);
@@ -242,7 +244,13 @@ static void main_window_load(Window *window) {
   text_layer_set_text_alignment(s_peak_field, GTextAlignmentRight);
   layer_add_child(window_layer, text_layer_get_layer(s_peak_field));
   
-  // TODO ICOS (sleep and peak)
+  s_sleep_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_1_Y + 1, 25, LABEL_H));
+  bitmap_layer_set_bitmap(s_sleep_layer, s_icon_sleep);
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_sleep_layer));
+  
+  s_peak_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_2_Y + 1, 25, LABEL_H));
+  bitmap_layer_set_bitmap(s_peak_layer, s_icon_peak);
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_peak_layer));
   
   update_caffeine_text(NULL);
 }
@@ -262,9 +270,14 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_peak_field);
   text_layer_destroy(s_sleep_field);
   
+  bitmap_layer_destroy(s_sleep_layer);
+  bitmap_layer_destroy(s_peak_layer);
+  
   gbitmap_destroy(s_icon_up);
   gbitmap_destroy(s_icon_more);
   gbitmap_destroy(s_icon_down);
+  gbitmap_destroy(s_icon_sleep);
+  gbitmap_destroy(s_icon_peak);
   
   window_destroy(s_main_window);
 }

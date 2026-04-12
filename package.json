@@ -35,7 +35,13 @@
                 {
                     "file": "images/InfoSleep",
                     "name": "ICON_SLEEP",
-                    "targetPlatforms": null,
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "diorite",
+                        "emery",
+                        "flint"
+                    ],
                     "type": "bitmap"
                 },
                 {
@@ -61,6 +67,18 @@
                     "menuIcon": true,
                     "name": "ICON_LOGO",
                     "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/InfoPeak",
+                    "name": "ICON_PEAK",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "diorite",
+                        "emery",
+                        "flint"
+                    ],
                     "type": "bitmap"
                 }
             ]
