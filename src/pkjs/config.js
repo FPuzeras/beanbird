@@ -333,6 +333,18 @@ module.exports = [
         }
       },
       {
+        "type": "input",
+        "messageKey": "SleepMg",
+        "label": "Maximum good sleep content (mg)",
+        "defaultValue": 50,
+        "attributes": {
+          "type": "number",
+          "min": 0,
+          "max": 400,
+          "step": 1
+        }
+      },
+      {
         "type": "text",
         "defaultValue": "Do not set half-lifes too close, maintain at least 10min difference, otherwise simulation errors might become very large.",
       },
@@ -359,7 +371,7 @@ module.exports = [
           "max": 1600,
           "step": 1
         }
-      },
+      }
     ]
   },
   {

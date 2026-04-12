@@ -20,7 +20,8 @@
             "AbsorbtionHL",
             "EliminationHL",
             "PreferMin",
-            "PreferMax"
+            "PreferMax",
+            "SleepMg"
         ],
         "projectType": "native",
         "resources": {

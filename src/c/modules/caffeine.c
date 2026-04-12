@@ -44,6 +44,8 @@ static drinks_meta_t s_drinks_meta;
 
 static rate_constants_t s_rates;
 
+static caffeine_stats_t s_stats;
+
 static int32_t LUT_ka[N_LUT];
 static int32_t LUT_ke[N_LUT];
 
@@ -321,6 +323,23 @@ static drink_t* prv_compute_drink_contribution(time_t current_time, drink_t *dri
   }
 }
 
+static void prv_save_caffeine_stats() {
+  persist_write_data(STORAGE_KEY_CAFFEINE_STATS, &s_stats, sizeof(s_stats));
+}
+
+static void prv_calculate_caffeine_stats() {
+  
+  prv_save_caffeine_stats();
+}
+
+static void prv_init_caffeine_stats() {
+  if (persist_exists(STORAGE_KEY_CAFFEINE_STATS)) {
+    persist_read_data(STORAGE_KEY_CAFFEINE_STATS, &s_stats, sizeof(s_stats));
+  } else {
+    prv_calculate_caffeine_stats();
+  }
+}
+
 // ---- CAFFEINE FUNCTIONS END -----
 
 
@@ -330,6 +349,7 @@ void caffeine_init() {
   prv_init_drinks();
   prv_compute_rates(settings.half_life_elim, settings.half_life_abs);
   prv_init_LUTs();
+  prv_init_caffeine_stats();
 }
 
 void add_drink(int16_t miligrams, int8_t ingestion_duration) {
@@ -340,17 +360,16 @@ void add_drink(int16_t miligrams, int8_t ingestion_duration) {
   };
   
   prv_drink_insert(drink);
+  prv_calculate_caffeine_stats();
 }
 
 void metabolism_update_settings(int16_t hl_elim_m, int8_t hl_abs_m) {
   prv_compute_rates(hl_elim_m, hl_abs_m);
   prv_build_LUT(s_rates.ka_fp, LUT_ka);
   prv_build_LUT(s_rates.ke_fp, LUT_ke);
+  prv_calculate_caffeine_stats();
 }
 
-void calculate_caffeine_stats() {
-  
-}
 
 caffeine_totals_t get_caffeine_totals(){
   caffeine_totals_t totals = {0, 0, 0};
@@ -365,6 +384,5 @@ caffeine_totals_t get_caffeine_totals(){
 }
 
 caffeine_stats_t get_caffeine_stats() {
-  caffeine_stats_t stats = {0,0,0};
-  return stats;
+  return s_stats;
 }

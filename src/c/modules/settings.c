@@ -50,6 +50,8 @@ static void prv_default_settings() {
   settings.custom_caff = 100;
   settings.custom_step = 5;
   
+  settings.sleep_mg = 50;
+  
   settings.drink_time[0] = 5;
   settings.drink_time[1] = 15;
   settings.drink_time[2] = 30;
@@ -84,9 +86,9 @@ void parse_inbox_settings(DictionaryIterator *iter) {
   // load drinks
   for (uint32_t i = 0; i < DRINK_COUNT; i++) {
     tuple = dict_find(iter, MESSAGE_KEY_CaffContent + i);
-    if (tuple) {
+    if (tuple)
       prv_parse_tuple_int16(tuple, &settings.caff_content[i]);
-    }
+    
     tuple = dict_find(iter, MESSAGE_KEY_DrinkTitle + i);
     if (tuple) {
       strncpy(settings.drink_titles[i], tuple->value->cstring, STR_MAXLEN);
@@ -96,27 +98,27 @@ void parse_inbox_settings(DictionaryIterator *iter) {
   
   // load drink timings
   tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 0);
-  if (tuple) {
+  if (tuple)
     prv_parse_tuple_int8(tuple, &settings.drink_time[0]);
-  }
+  
   tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 1);
-  if (tuple) {
+  if (tuple)
     prv_parse_tuple_int8(tuple, &settings.drink_time[1]);
-  }
+  
   tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 2);
-  if (tuple) {
+  if (tuple)
    prv_parse_tuple_int8(tuple, &settings.drink_time[2]);
-  }
+  
   
   // load custom page preferences
   tuple = dict_find(iter, MESSAGE_KEY_CustomCaff);
-  if (tuple) {
+  if (tuple) 
     prv_parse_tuple_int16(tuple, &settings.custom_caff);
-  }
+  
   tuple = dict_find(iter, MESSAGE_KEY_CustomStep);
-  if (tuple) {
+  if (tuple)
     prv_parse_tuple_int8(tuple, &settings.custom_step);
-  }
+  
   
   // load model constants
   tuple = dict_find(iter, MESSAGE_KEY_EliminationHL);
@@ -134,18 +136,22 @@ void parse_inbox_settings(DictionaryIterator *iter) {
   
   if (recalculate) {
     metabolism_update_settings(settings.half_life_elim, settings.half_life_abs);
-    calculate_caffeine_stats();
   }
   
-   #ifdef PBL_COLOR
+  tuple = dict_find(iter, MESSAGE_KEY_SleepMg);
+  if (tuple)
+    prv_parse_tuple_int16(tuple, &settings.sleep_mg);
+  
+  
+  #ifdef PBL_COLOR
     tuple = dict_find(iter, MESSAGE_KEY_PreferMin);
-    if (tuple) {
+    if (tuple)
       prv_parse_tuple_int16(tuple, &settings.minimum_mg);
-    } 
+    
     tuple = dict_find(iter, MESSAGE_KEY_PreferMax);
-    if (tuple) {
+    if (tuple)
       prv_parse_tuple_int16(tuple, &settings.maximum_mg);
-    }
+    
   #endif
   
   prv_save_settings();

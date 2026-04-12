@@ -12,6 +12,7 @@
   #define SCREEN_H           228
   
   #define MARGIN_TOP         4
+  #define SIDE_PADDING       6
   
   #define LABEL_H            24
   #define VALUE_H            36
@@ -22,9 +23,7 @@
   #define FONT_TOP_VALUE     FONT_KEY_GOTHIC_28_BOLD
   #define FONT_MID_LABEL     FONT_KEY_GOTHIC_18
   #define FONT_MID_VALUE     FONT_KEY_GOTHIC_28_BOLD
-  #define FONT_BOT_LABEL     FONT_KEY_GOTHIC_18_BOLD
-  #define FONT_BOT_VALUE     FONT_KEY_GOTHIC_28_BOLD
-  #define FONT_BOT_SUB       FONT_KEY_GOTHIC_14
+  #define FONT_BOT_FIELD     FONT_KEY_GOTHIC_18_BOLD
 
   #define GUT_LABEL_TEXT     "GUT CAFF."
   #define DRINK_LABEL_TEXT   "DRINK CAFF."
@@ -34,6 +33,7 @@
   #define SCREEN_H           168
   
   #define MARGIN_TOP         3
+  #define SIDE_PADDING       5
   
   #define LABEL_H            16
   #define VALUE_H            30
@@ -44,9 +44,7 @@
   #define FONT_TOP_VALUE     FONT_KEY_GOTHIC_24_BOLD
   #define FONT_MID_LABEL     FONT_KEY_GOTHIC_14
   #define FONT_MID_VALUE     FONT_KEY_GOTHIC_24_BOLD
-  #define FONT_BOT_LABEL     FONT_KEY_GOTHIC_14_BOLD
-  #define FONT_BOT_VALUE     FONT_KEY_GOTHIC_18_BOLD
-  #define FONT_BOT_SUB       FONT_KEY_GOTHIC_14
+  #define FONT_BOT_FIELD     FONT_KEY_GOTHIC_14_BOLD
 
   #define GUT_LABEL_TEXT     "GUT"
   #define DRINK_LABEL_TEXT   "DRINK"
@@ -61,15 +59,15 @@
 #define CONTENT_W          (SCREEN_W - ACTION_BAR_WIDTH)
 #define HALF_CONTENT_W     (CONTENT_W / 2)
 #define SECTION_H          (SCREEN_H / 3)
+#define HALF_SECTION_H     (SECTION_H / 2)
 
 #define TOP_VAL_Y          (MARGIN_TOP + LABEL_H)
 #define MID_SEC_Y          SECTION_H
 #define MID_LABEL_Y        (MID_SEC_Y + MARGIN_TOP)
 #define MID_VAL_Y          (MID_LABEL_Y + SMALL_LABEL_H)
 #define BOT_SEC_Y          (SECTION_H * 2)
-#define BOT_LABEL_Y        (BOT_SEC_Y + MARGIN_TOP)
-#define BOT_VAL_Y          (BOT_LABEL_Y + SMALL_LABEL_H)
-#define BOT_SUB_Y          (BOT_VAL_Y + SMALL_VALUE_H)
+#define BOT_FIELD_1_Y      (BOT_SEC_Y + MARGIN_TOP)
+#define BOT_FIELD_2_Y      (BOT_FIELD_1_Y + HALF_SECTION_H + MARGIN_TOP)
 
 #define REFRESH_MS         1000
 
@@ -81,9 +79,10 @@ static Layer *s_canvas_layer;
 static TextLayer *s_caffeine_label_layer, *s_caffeine_value_layer;
 static TextLayer *s_pending_drink_label, *s_pending_drink_value;
 static TextLayer *s_pending_gut_label, *s_pending_gut_value;
-static TextLayer *s_sleep_label, *s_timer_layer, *s_sleep_sub_label;
+static TextLayer *s_sleep_field, *s_peak_field;
 
 static char s_blood_mg_buf[8], s_gut_mg_buf[6], s_pending_mg_buf[6];
+static char s_sleep_buf[20], s_peak_buf[20];
 static AppTimer* s_refresh_timer;
 
 
@@ -113,7 +112,28 @@ static void update_caffeine_text(void *_) {
   snprintf(s_blood_mg_buf, sizeof(s_blood_mg_buf), "%dmg", totals.blood_mg);
   snprintf(s_gut_mg_buf, sizeof(s_gut_mg_buf), "%d", totals.gut_mg);
   snprintf(s_pending_mg_buf, sizeof(s_pending_mg_buf), "%d",  totals.pending_mg);
-
+  
+  caffeine_stats_t caff_stats = get_caffeine_stats();
+  time_t current_time = time(NULL);
+  
+  int sleep_time = current_time > caff_stats.sleep_time ? 0 : caff_stats.sleep_time - current_time ;
+  
+  snprintf(s_sleep_buf, sizeof(s_sleep_buf), "<%dmg in %02d:%02d:%02d", 
+           settings.sleep_mg,
+           sleep_time / SECONDS_PER_DAY,
+           (sleep_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
+           sleep_time % SECONDS_PER_MINUTE);
+  
+  int peak_time = current_time > caff_stats.peak_time ? 0 : caff_stats.peak_time - current_time;
+  snprintf(s_peak_buf, sizeof(s_peak_buf), "%dmg in %02d:%02d:%02d", 
+           caff_stats.peak_mg,
+           peak_time / SECONDS_PER_DAY,
+           (peak_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
+           peak_time % SECONDS_PER_MINUTE);
+  
+  layer_mark_dirty(text_layer_get_layer(s_sleep_field));
+  layer_mark_dirty(text_layer_get_layer(s_peak_field));
+  
   text_layer_set_text(s_caffeine_value_layer, s_blood_mg_buf);
   text_layer_set_text(s_pending_gut_value, s_gut_mg_buf);
   text_layer_set_text(s_pending_drink_value, s_pending_mg_buf);
@@ -142,6 +162,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   
   graphics_draw_line(ctx, GPoint(0, SECTION_H), GPoint(CONTENT_W, SECTION_H));
   graphics_draw_line(ctx, GPoint(0, SECTION_H * 2), GPoint(CONTENT_W, SECTION_H * 2));
+  graphics_draw_line(ctx, GPoint(0, SECTION_H * 2 + HALF_SECTION_H), GPoint(CONTENT_W, SECTION_H * 2 + HALF_SECTION_H));
   graphics_draw_line(ctx, GPoint(HALF_CONTENT_W, SECTION_H), GPoint(HALF_CONTENT_W, SECTION_H * 2));
 }
 
@@ -191,23 +212,19 @@ static void main_window_load(Window *window) {
   text_layer_set_text_alignment(s_pending_gut_value, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_pending_gut_value));
 
-  s_sleep_label = text_layer_create(GRect(0, BOT_LABEL_Y, CONTENT_W, SMALL_LABEL_H));
-  text_layer_set_text(s_sleep_label, "SLEEP READY:");
-  text_layer_set_font(s_sleep_label, fonts_get_system_font(FONT_BOT_LABEL));
-  text_layer_set_text_alignment(s_sleep_label, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_sleep_label));
+  s_sleep_field = text_layer_create(GRect(0, BOT_FIELD_1_Y + 1, CONTENT_W - SIDE_PADDING, LABEL_H));
+  text_layer_set_text(s_sleep_field, s_sleep_buf);
+  text_layer_set_font(s_sleep_field, fonts_get_system_font(FONT_BOT_FIELD));
+  text_layer_set_text_alignment(s_sleep_field, GTextAlignmentRight);
+  layer_add_child(window_layer, text_layer_get_layer(s_sleep_field));
 
-  s_timer_layer = text_layer_create(GRect(0, BOT_VAL_Y, CONTENT_W, SMALL_VALUE_H));
-  text_layer_set_text(s_timer_layer, "00:00:00");
-  text_layer_set_font(s_timer_layer, fonts_get_system_font(FONT_BOT_VALUE));
-  text_layer_set_text_alignment(s_timer_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_timer_layer));
-
-  s_sleep_sub_label = text_layer_create(GRect(0, BOT_SUB_Y, CONTENT_W, SMALL_LABEL_H));
-  text_layer_set_text(s_sleep_sub_label, "until <50mg");
-  text_layer_set_font(s_sleep_sub_label, fonts_get_system_font(FONT_BOT_SUB));
-  text_layer_set_text_alignment(s_sleep_sub_label, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_sleep_sub_label));
+  s_peak_field = text_layer_create(GRect(0, BOT_FIELD_2_Y, CONTENT_W - SIDE_PADDING, LABEL_H));
+  text_layer_set_text(s_peak_field, s_peak_buf);
+  text_layer_set_font(s_peak_field, fonts_get_system_font(FONT_BOT_FIELD));
+  text_layer_set_text_alignment(s_peak_field, GTextAlignmentRight);
+  layer_add_child(window_layer, text_layer_get_layer(s_peak_field));
+  
+  // TODO ICOS (sleep and peak)
   
   update_caffeine_text(NULL);
 }
@@ -223,9 +240,9 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_pending_drink_value);
   text_layer_destroy(s_pending_gut_label);
   text_layer_destroy(s_pending_gut_value);
-  text_layer_destroy(s_sleep_label);
-  text_layer_destroy(s_timer_layer);
-  text_layer_destroy(s_sleep_sub_label);
+  text_layer_destroy(s_sleep_field);
+  text_layer_destroy(s_peak_field);
+  text_layer_destroy(s_sleep_field);
   
   window_destroy(s_main_window);
 }

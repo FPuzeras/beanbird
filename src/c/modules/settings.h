@@ -13,6 +13,7 @@ typedef struct ClaySettings {
   
   int16_t custom_caff;
   int8_t custom_step;
+  int16_t sleep_mg;
   
   int16_t half_life_elim;
   int8_t half_life_abs;
