@@ -18,9 +18,10 @@
 #define CUTOFF        100000
 #define REF_STEP      8
 
-#define PEAK_SEARCH_INTERVAL  (6 * SECONDS_PER_HOUR)
-#define PEAK_SEARCH_ITER      20
-
+#define PEAK_SEARCH_INTERVAL   (6 * SECONDS_PER_HOUR)
+#define PEAK_SEARCH_ITER       20
+#define SLEEP_SEARCH_INTERVAL  SECONDS_PER_DAY
+#define SLEEP_SEARCH_ITER      16
 typedef struct {
   int32_t ka_fp;
   int32_t ke_fp;
@@ -476,7 +477,31 @@ static void prv_find_caffeine_peak() {
 }
 
 static void prv_find_sleep_time() {
+  if (s_stats.peak_mg < settings.sleep_mg) {
+    s_stats.sleep_time = 0;
+    return;
+  }
   
+  uint32_t target = settings.sleep_mg * NG_IN_MG;
+  time_t lo = s_stats.peak_time;
+  time_t hi = s_stats.peak_time + SLEEP_SEARCH_INTERVAL;
+  
+  // find 24h interval to search
+  while (prv_get_caffeine_totals(hi, true).blood_ng > target) {
+    lo = hi;
+    hi += SLEEP_SEARCH_INTERVAL;
+  }
+  
+  for (int i = 0; i < SLEEP_SEARCH_ITER; i++) {
+    time_t mid = lo + (hi - lo) / 2;
+    if (prv_get_caffeine_totals(mid, true).blood_ng >= target) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  
+  s_stats.sleep_time = hi;
 }
 
 static void prv_calculate_caffeine_stats(bool only_sleep) {
@@ -536,7 +561,7 @@ void update_sleep() {
 }
 
 caffeine_totals_t get_caffeine_totals() {
-  prv_caffeine_totals_t prv_totals = prv_get_caffeine_totals(time(NULL) + 30 * SECONDS_PER_MINUTE, false);
+  prv_caffeine_totals_t prv_totals = prv_get_caffeine_totals(time(NULL), false);
   caffeine_totals_t totals = {
     .blood_mg = prv_totals.blood_ng / NG_IN_MG,
     .gut_mg = prv_totals.gut_ng / NG_IN_MG,
