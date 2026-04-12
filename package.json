@@ -1,5 +1,5 @@
 {
-    "author": "FaustasP",
+    "author": "FPuzeras",
     "dependencies": {
         "@rebble/clay": "^1.0.8"
     },
@@ -25,7 +25,45 @@
         ],
         "projectType": "native",
         "resources": {
-            "media": []
+            "media": [
+                {
+                    "file": "images/ActionUp",
+                    "name": "ICON_ACTION_UP",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/InfoSleep",
+                    "name": "ICON_SLEEP",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/ActionMore",
+                    "name": "ICON_ACTION_MORE",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/ActionAdd",
+                    "name": "ICON_ACTION_ADD",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/ActionDown",
+                    "name": "ICON_ACTION_DOWN",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/Logo",
+                    "menuIcon": true,
+                    "name": "ICON_LOGO",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                }
+            ]
         },
         "sdkVersion": "3",
         "targetPlatforms": [

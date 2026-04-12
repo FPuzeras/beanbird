@@ -27,13 +27,16 @@
 
   #define GUT_LABEL_TEXT     "GUT CAFF."
   #define DRINK_LABEL_TEXT   "DRINK CAFF."
+
+  #define PEAK_LABEL_FMT     "%dmg in %02d:%02d:%02d"
+  #define SLEEP_LABEL_FMT    "<%dmg in %02d:%02d:%02d"
   
 #elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
   #define SCREEN_W           144
   #define SCREEN_H           168
   
   #define MARGIN_TOP         3
-  #define SIDE_PADDING       5
+  #define SIDE_PADDING       4
   
   #define LABEL_H            16
   #define VALUE_H            30
@@ -44,10 +47,13 @@
   #define FONT_TOP_VALUE     FONT_KEY_GOTHIC_24_BOLD
   #define FONT_MID_LABEL     FONT_KEY_GOTHIC_14
   #define FONT_MID_VALUE     FONT_KEY_GOTHIC_24_BOLD
-  #define FONT_BOT_FIELD     FONT_KEY_GOTHIC_14_BOLD
+  #define FONT_BOT_FIELD     FONT_KEY_GOTHIC_14
 
   #define GUT_LABEL_TEXT     "GUT"
   #define DRINK_LABEL_TEXT   "DRINK"
+
+  #define PEAK_LABEL_FMT     "%dmg %02d:%02d:%02d"
+  #define SLEEP_LABEL_FMT    "<%dmg %02d:%02d:%02d"
   
 #elif defined(PBL_PLATFORM_CHALK)
   #error "Not implemented."
@@ -85,8 +91,12 @@ static char s_blood_mg_buf[8], s_gut_mg_buf[6], s_pending_mg_buf[6];
 static char s_sleep_buf[20], s_peak_buf[20];
 static AppTimer* s_refresh_timer;
 
-
 static AppTimer* s_refresh_timer;
+
+static GBitmap *s_icon_up;
+static GBitmap *s_icon_more;
+static GBitmap *s_icon_down;
+
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   push_window_custom();
@@ -118,14 +128,14 @@ static void update_caffeine_text(void *_) {
   
   int sleep_time = current_time > caff_stats.sleep_time ? 0 : caff_stats.sleep_time - current_time ;
   
-  snprintf(s_sleep_buf, sizeof(s_sleep_buf), "<%dmg in %02d:%02d:%02d", 
+  snprintf(s_sleep_buf, sizeof(s_sleep_buf), SLEEP_LABEL_FMT, 
            settings.sleep_mg,
            sleep_time / SECONDS_PER_DAY,
            (sleep_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
            sleep_time % SECONDS_PER_MINUTE);
   
   int peak_time = current_time > caff_stats.peak_time ? 0 : caff_stats.peak_time - current_time;
-  snprintf(s_peak_buf, sizeof(s_peak_buf), "%dmg in %02d:%02d:%02d", 
+  snprintf(s_peak_buf, sizeof(s_peak_buf), PEAK_LABEL_FMT, 
            caff_stats.peak_mg,
            peak_time / SECONDS_PER_DAY,
            (peak_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
@@ -176,6 +186,14 @@ static void main_window_load(Window *window) {
   s_canvas_layer = layer_create(GRect(0, 0, CONTENT_W, SCREEN_H));
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
+  
+  s_icon_up = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_UP);
+  s_icon_more = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_MORE);
+  s_icon_down = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_DOWN);
+  
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_up);
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_more);
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_down);
 
   s_caffeine_label_layer = text_layer_create(GRect(0, MARGIN_TOP, CONTENT_W, LABEL_H));
   text_layer_set_text(s_caffeine_label_layer, "BLOOD CAFFEINE");
@@ -244,11 +262,11 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_peak_field);
   text_layer_destroy(s_sleep_field);
   
+  gbitmap_destroy(s_icon_up);
+  gbitmap_destroy(s_icon_more);
+  gbitmap_destroy(s_icon_down);
+  
   window_destroy(s_main_window);
-}
-
-void refresh_stats() {
-  // TODO
 }
 
 void push_window_main() {

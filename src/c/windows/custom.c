@@ -46,6 +46,10 @@ static Window *s_custom_window;
 static ActionBarLayer *s_action_bar;
 static TextLayer *s_caffeine_text_layer;
 
+static GBitmap *s_icon_up;
+static GBitmap *s_icon_add;
+static GBitmap *s_icon_down;
+
 static char s_caffeine_buf[9];
 static int16_t s_caffeine;
 
@@ -68,7 +72,7 @@ static void refresh_caffeine() {
   snprintf(s_caffeine_buf, sizeof(s_caffeine_buf), "%dmg", s_caffeine);
   
   #ifdef PBL_COLOR
-  // set text color based on limtis
+    // set text color based on limtis
   #endif
   
   layer_mark_dirty(text_layer_get_layer(s_caffeine_text_layer));
@@ -100,9 +104,17 @@ static void click_config_provider(void *context) {
 static void custom_window_load(Window *window) {
   s_caffeine = settings.custom_caff;
   
+  s_icon_up = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_UP);
+  s_icon_add = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_ADD);
+  s_icon_down = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_DOWN);
+  
   s_action_bar = action_bar_layer_create();
   action_bar_layer_add_to_window(s_action_bar, window);
   action_bar_layer_set_click_config_provider(s_action_bar, click_config_provider);
+  
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_up);
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_add);
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_down);
   
   Layer *window_layer = window_get_root_layer(window);
 
@@ -119,6 +131,10 @@ static void custom_window_load(Window *window) {
 static void custom_window_unload(Window *window) {
   action_bar_layer_destroy(s_action_bar);
   text_layer_destroy(s_caffeine_text_layer);
+  
+  gbitmap_destroy(s_icon_up);
+  gbitmap_destroy(s_icon_add);
+  gbitmap_destroy(s_icon_down);
   
   window_destroy(s_custom_window);
 }
