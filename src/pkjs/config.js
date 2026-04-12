@@ -41,7 +41,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 999,
+              "max": 2000,
               "step": 1
             }
           }
@@ -73,7 +73,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 999,
+              "max": 2000,
               "step": 1
             }
           }
@@ -105,7 +105,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 999,
+              "max": 2000,
               "step": 1
             }
           }
@@ -147,7 +147,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 999,
+              "max": 2000,
               "step": 1
             }
           }
@@ -179,7 +179,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 999,
+              "max": 2000,
               "step": 1
             }
           }
@@ -211,7 +211,7 @@ module.exports = [
             "attributes": {
               "type": "number",
               "min": 0,
-              "max": 999,
+              "max": 2000,
               "step": 1
             }
           }

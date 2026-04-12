@@ -10,8 +10,12 @@
   #define ACTION_COMPRESS    30
   
   #define MARGIN_SIDE        6
+  #define MARGIN_TOP         4
 
   #define LABEL_H            32
+  #define HELPER_H           18
+
+  #define FONT_HELPER        FONT_KEY_GOTHIC_18_BOLD
   #define FONT_LABEL         FONT_KEY_GOTHIC_28_BOLD
   
 #elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
@@ -21,9 +25,13 @@
   #define ACTION_COMPRESS    10
   
   #define MARGIN_SIDE        4
-  
-  #define LABEL_H            24
-  #define FONT_LABEL         FONT_KEY_GOTHIC_24_BOLD
+  #define MARGIN_TOP         2
+
+  #define LABEL_H            20
+  #define HELPER_H           16
+
+  #define FONT_HELPER        FONT_KEY_GOTHIC_14_BOLD
+  #define FONT_LABEL         FONT_KEY_GOTHIC_18_BOLD
   
 #elif defined(PBL_PLATFORM_CHALK)
   #error "Not implemented."
@@ -48,6 +56,7 @@ static Window *s_group_window;
 static ActionBarLayer *s_action_bar;
 static Layer *s_canvas_layer;
 
+static TextLayer *s_text_helper;
 static TextLayer *s_text_top;
 static TextLayer *s_text_select;
 static TextLayer *s_text_bottom;
@@ -119,9 +128,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   #else
     graphics_context_set_stroke_color(ctx, GColorBlack);
   #endif
-  
   graphics_context_set_stroke_width(ctx, 2);
-  
+
+  #if defined(PBL_PLATFORM_EMERY)
+    graphics_draw_line(ctx, GPoint(0, ACTION_COMPRESS), GPoint(CONTENT_W, ACTION_COMPRESS));
+  #endif
   graphics_draw_line(ctx, GPoint(0, SECTION_H + ACTION_COMPRESS), GPoint(CONTENT_W, SECTION_H + ACTION_COMPRESS));
   graphics_draw_line(ctx, GPoint(0, SECTION_H * 2 + ACTION_COMPRESS), GPoint(CONTENT_W, SECTION_H * 2 + ACTION_COMPRESS));
 }
@@ -142,6 +153,12 @@ static void group_window_load(Window *window) {
   s_canvas_layer = layer_create(GRect(0, 0, CONTENT_W, SCREEN_H));
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
+
+  s_text_helper = text_layer_create(GRect(0, MARGIN_TOP, CONTENT_W, HELPER_H));
+  text_layer_set_text(s_text_helper, "SELECT PRESET");
+  text_layer_set_text_alignment(s_text_helper, GTextAlignmentCenter);
+  text_layer_set_font(s_text_helper, fonts_get_system_font(FONT_HELPER));
+  layer_add_child(window_layer, text_layer_get_layer(s_text_helper));
   
   s_text_top = text_layer_create(GRect(MARGIN_SIDE, TOP_LABEL_Y, LABEL_W, LABEL_H));
   s_text_select = text_layer_create(GRect(MARGIN_SIDE, MID_LABEL_Y, LABEL_W, LABEL_H));
@@ -155,6 +172,10 @@ static void group_window_load(Window *window) {
   text_layer_set_text_alignment(s_text_select, GTextAlignmentLeft);
   text_layer_set_text_alignment(s_text_bottom, GTextAlignmentLeft);
   
+  text_layer_set_font(s_text_top, fonts_get_system_font(FONT_LABEL));
+  text_layer_set_font(s_text_select, fonts_get_system_font(FONT_LABEL));
+  text_layer_set_font(s_text_bottom, fonts_get_system_font(FONT_LABEL));
+  
   layer_add_child(window_layer, text_layer_get_layer(s_text_top));
   layer_add_child(window_layer, text_layer_get_layer(s_text_select));
   layer_add_child(window_layer, text_layer_get_layer(s_text_bottom));
@@ -164,6 +185,7 @@ static void group_window_unload(Window *window) {
   text_layer_destroy(s_text_top);
   text_layer_destroy(s_text_select);
   text_layer_destroy(s_text_bottom);
+  text_layer_destroy(s_text_helper);
   
   action_bar_layer_destroy(s_action_bar);
   gbitmap_destroy(s_icon_add);

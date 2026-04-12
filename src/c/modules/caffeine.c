@@ -5,27 +5,30 @@
 
 #define DRINKS_BUF_SIZE  32
 
-#define F         24
-#define ONE_FP    (1LL << F)
-#define HALF_FP   (1LL << (F - 1))
-#define LN2_FP    11629080  // (int32_t)(ln(2) * ONE_FP + 0.5)
-#define INV2_FP   8388608   // (int32_t)(ONE_FP / 2.0 + 0.5)
-#define INV6_FP   2796203   // (int32_t)(ONE_FP / 6.0 + 0.5)
-#define INV24_FP  699051    // (int32_t)(ONE_FP / 24.0 + 0.5)
-#define DELTA_T   (25 * SECONDS_PER_MINUTE) // 25min * 128 > 53h 
-#define N_LUT     128
-#define NG_IN_MG  1000000
-#define CUTOFF    100000
-#define REF_STEP  8
+#define F             24
+#define ONE_FP        (1LL << F)
+#define HALF_FP       (1LL << (F - 1))
+#define LN2_FP        11629080  // (int32_t)(ln(2) * ONE_FP + 0.5)
+#define INV2_FP       8388608   // (int32_t)(ONE_FP / 2.0 + 0.5)
+#define INV6_FP       2796203   // (int32_t)(ONE_FP / 6.0 + 0.5)
+#define INV24_FP      699051    // (int32_t)(ONE_FP / 24.0 + 0.5)
+#define DELTA_T       (25 * SECONDS_PER_MINUTE) // 25min * 128 > 53h 
+#define N_LUT         128
+#define NG_IN_MG      1000000
+#define CUTOFF        100000
+#define REF_STEP      8
+
+#define PEAK_SEARCH_INTERVAL  (6 * SECONDS_PER_HOUR)
+#define PEAK_SEARCH_ITER      20
 
 typedef struct {
-    int32_t ka_fp;
-    int32_t ke_fp;
-    int64_t inv_ka_fp;
-    int64_t inv_ke_fp;
-    int32_t diff_fp;
-    int64_t inv_diff_fp;
-    int32_t factor_fp;
+  int32_t ka_fp;
+  int32_t ke_fp;
+  int64_t inv_ka_fp;
+  int64_t inv_ke_fp;
+  int32_t diff_fp;
+  int64_t inv_diff_fp;
+  int32_t factor_fp;
 } rate_constants_t;
 
 typedef struct {
@@ -38,6 +41,23 @@ typedef struct {
   uint8_t count;
   uint8_t head;
 } drinks_meta_t;
+
+typedef struct {
+  time_t start_time;
+  uint32_t d_sec;
+  int32_t R_ng_per_s;
+  int32_t E_a_d_fp;
+  int32_t E_e_d_fp;
+  int32_t G_end_ng;
+  int32_t B_end_ng;
+  int64_t dB_coeff_unscaled;
+} drink_peak_cache_t;
+
+typedef struct {
+  uint32_t pending_ng;
+  uint32_t gut_ng;
+  uint32_t blood_ng;
+} prv_caffeine_totals_t;
 
 static drink_t s_drinks_buf[DRINKS_BUF_SIZE];
 static drinks_meta_t s_drinks_meta;
@@ -122,9 +142,15 @@ static void prv_init_drinks () {
 // ---- CAFFEINE FUNCTIONS BEGIN -----
 
 static void prv_compute_rates(int16_t e_t_half, int8_t a_t_half) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Elimination half-life (min): %d", e_t_half);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Absorbtion half-life (min): %d", a_t_half);
+  
+  if (e_t_half < 1) e_t_half = 1;
+  if (a_t_half < 1) a_t_half = 1;
+  
   int32_t e_half_sec = e_t_half * SECONDS_PER_MINUTE;
   int16_t a_half_sec = a_t_half * SECONDS_PER_MINUTE;
-  
+
   s_rates.ke_fp = (LN2_FP + (e_half_sec / 2)) / e_half_sec;
   s_rates.ka_fp = (LN2_FP + (a_half_sec / 2)) / a_half_sec;
 
@@ -162,35 +188,27 @@ static int32_t prv_exp_taylor_neg(int32_t x_fp) {
     return (int32_t)result;
 }
 
+static int32_t prv_exp_taylor_for_step(int32_t k_fp, int32_t duration_s) {
+    int64_t x_fp = ((int64_t)k_fp * duration_s);
+    int64_t x2 = (x_fp * x_fp + HALF_FP) >> F;
+    int64_t x3 = (x2 * x_fp + HALF_FP) >> F;
+    int64_t x4 = (x3 * x_fp + HALF_FP) >> F;
+    int64_t x5 = (x4 * x_fp + HALF_FP) >> F;
+    
+    // 1 - x + x^2/2 - x^3/6 + x^4/24 - x^5/120
+    return ONE_FP - x_fp + ((x2 * INV2_FP + HALF_FP) >> F) 
+                         - ((x3 * INV6_FP + HALF_FP) >> F) 
+                         + ((x4 * INV24_FP + HALF_FP) >> F)
+                         - ((x5 * (ONE_FP/120) + HALF_FP) >> F);
+}
+
 static void prv_build_LUT(int32_t k_fp, int32_t LUT[N_LUT]) {
-  LUT[0] = ONE_FP;
-  
-  // compute exact entries at multiples of REF_STEP
-  for (int n = REF_STEP; n < N_LUT; n += REF_STEP) {
-    int64_t x = (int64_t)k_fp * n * DELTA_T;
-    LUT[n] = prv_exp_taylor_neg((int32_t)x);
-  }
-  
-  // fill gaps using recurrence from nearest left exact
-  for (int base = 0; base < N_LUT - 1; base += REF_STEP) {
-    int32_t current = LUT[base];
-    int32_t E1_step; // e^{-k * DELTA_T} (reused for short recurrence)
+    LUT[0] = ONE_FP;
+    int32_t E_step = prv_exp_taylor_for_step(k_fp, DELTA_T);
 
-    if (base == 0) {
-      int64_t x1 = (int64_t)k_fp * DELTA_T;
-      E1_step = prv_exp_taylor_neg((int32_t)x1);
-    } else {
-      E1_step = (int32_t)(((int64_t)LUT[base] * ONE_FP + (LUT[base - REF_STEP] >> 1))
-                / LUT[base - REF_STEP]);
+    for (int n = 1; n < N_LUT; n++) {
+        LUT[n] = (int32_t)(((int64_t)LUT[n-1] * E_step + HALF_FP) >> F);
     }
-
-    // Fill up to the next exact entry (or end of table)
-    int end = (base + REF_STEP < N_LUT) ? base + REF_STEP : N_LUT;
-    for (int n = base + 1; n < end; n++) {
-      LUT[n] = (int32_t)(((int64_t)current * E1_step + HALF_FP) >> F);
-      current = LUT[n];
-    }
-  }
 }
 
 static void prv_init_LUTs() {
@@ -235,7 +253,9 @@ static int32_t prv_eval_exp(int32_t k_fp, int32_t t, const int32_t LUT[N_LUT]) {
   return (int32_t)val;
 }
 
-static drink_t* prv_compute_drink_contribution(time_t current_time, drink_t *drink, caffeine_totals_t *totals) {
+static bool prv_compute_drink_contribution(time_t current_time, drink_t *drink, prv_caffeine_totals_t *totals) {
+  if (drink->start_time > current_time) return true;
+  
   uint32_t tau = current_time - drink->start_time;
   uint32_t dose = drink->dose_mg * NG_IN_MG;
   
@@ -256,7 +276,7 @@ static drink_t* prv_compute_drink_contribution(time_t current_time, drink_t *dri
     
     // for pending
     int64_t frac = ((int64_t)((int32_t)drink->duration_min * SECONDS_PER_MINUTE - tau) << F)
-               / ((int32_t)drink->duration_min * SECONDS_PER_MINUTE);
+                   / ((int32_t)drink->duration_min * SECONDS_PER_MINUTE);
     
     if (s_rates.ka_fp > s_rates.ke_fp) {
       B_contrib += diff_contrib;
@@ -264,18 +284,14 @@ static drink_t* prv_compute_drink_contribution(time_t current_time, drink_t *dri
       B_contrib -= diff_contrib;
     }
     
-    G_contrib /= NG_IN_MG;
-    B_contrib /= NG_IN_MG;
-
-    totals->gut_mg += G_contrib;
-    totals->blood_mg += B_contrib;
-    totals->pending_mg += (int32_t)(((int64_t)drink->dose_mg * frac + HALF_FP) >> F);
+    totals->gut_ng += G_contrib;
+    totals->blood_ng += B_contrib;
+    totals->pending_ng += (uint32_t)((dose * frac + HALF_FP) >> F);
     
-    return prv_get_drink_next(drink);
+    return true;
   } else {
     // drink finished
             
-    // calculate the exact state at the moment the drink ended
     int32_t E_a_d = prv_eval_exp(s_rates.ka_fp, drink->duration_min * SECONDS_PER_MINUTE, LUT_ka);
     int32_t E_e_d = prv_eval_exp(s_rates.ke_fp, drink->duration_min * SECONDS_PER_MINUTE, LUT_ke);
             
@@ -288,46 +304,188 @@ static drink_t* prv_compute_drink_contribution(time_t current_time, drink_t *dri
     int32_t E_a_rem = prv_eval_exp(s_rates.ka_fp, tau_after, LUT_ka);
     int32_t E_e_rem = prv_eval_exp(s_rates.ke_fp, tau_after, LUT_ke);
 
-    int32_t G_contrib = (int32_t)(((int64_t)G_end * E_a_rem + HALF_FP) >> F);
-    int32_t B_contrib = ((int64_t)B_end * E_e_rem + HALF_FP) >> F;
+    int32_t G_contrib = (int32_t)(((int64_t)G_end * (int64_t)E_a_rem + HALF_FP) >> F);
+    int32_t B_contrib = ((int64_t)B_end * (int64_t)E_e_rem + HALF_FP) >> F;
 
     int64_t gut_absorbed_term = ((int64_t)s_rates.factor_fp * G_end + HALF_FP) >> F;
     int64_t diff_exp = E_a_rem - E_e_rem;
     if (s_rates.ka_fp > s_rates.ke_fp) {
-        B_contrib -= (int32_t)((gut_absorbed_term * diff_exp + HALF_FP) >> F);
+      B_contrib -= (int32_t)((gut_absorbed_term * diff_exp + HALF_FP) >> F);
     } else {
-        B_contrib += (int32_t)((gut_absorbed_term * diff_exp + HALF_FP) >> F);
+      B_contrib += (int32_t)((gut_absorbed_term * diff_exp + HALF_FP) >> F);
     }
     
+    // im desperate, random clamp
+    if (G_contrib < 0) G_contrib = 0;
+    if (B_contrib < 0) B_contrib = 0;
+    
     if (G_contrib + B_contrib <= CUTOFF) {
-      G_contrib /= NG_IN_MG;
-      B_contrib /= NG_IN_MG;
-  
-      totals->gut_mg += G_contrib;
-      totals->blood_mg += B_contrib;
-      
-      drink_t *next = prv_get_drink_next(drink);
-      prv_drink_remove(drink);
-      
-      return next;
+      totals->gut_ng += G_contrib;
+      totals->blood_ng += B_contrib;
+        
+      return false;
     } else {
-      G_contrib /= NG_IN_MG;
-      B_contrib /= NG_IN_MG;
-  
-      totals->gut_mg += G_contrib;
-      totals->blood_mg += B_contrib;
-      totals->pending_mg += (drink->dose_mg - G_contrib - B_contrib);
+      totals->gut_ng += G_contrib;
+      totals->blood_ng += B_contrib;
       
-      return prv_get_drink_next(drink);
+      return true;
     }
   }
+}
+
+static prv_caffeine_totals_t prv_get_caffeine_totals(time_t current_time, bool simulation) {
+  prv_caffeine_totals_t totals = {
+    .blood_ng = 0,
+    .gut_ng = 0, 
+    .pending_ng = 0
+  };
+  drink_t *drink = prv_get_drink_head();
+    
+  while (drink != NULL) {
+    if (prv_compute_drink_contribution(current_time, drink, &totals) || simulation) {
+      drink = prv_get_drink_next(drink);
+    } else {
+      bool last = prv_get_drink_next(drink) == NULL;
+      prv_drink_remove(drink);
+      if (last) break;
+    }
+  }
+  
+  return totals;
+}
+
+// ----- CAFFEINE STATS BEGIN -----
+
+static int prv_get_global_derivative_sign(time_t t, const drink_peak_cache_t *cache, int count) {
+  int64_t total_slope = 0;
+
+  for (int i = 0; i < count; i++) {
+    const drink_peak_cache_t *d = &cache[i];
+    if (t < d->start_time) continue;
+
+    uint32_t tau = t - d->start_time;
+    if (tau <= d->d_sec) {
+      int32_t E_a = prv_eval_exp(s_rates.ka_fp, tau, LUT_ka);
+      int32_t E_e = prv_eval_exp(s_rates.ke_fp, tau, LUT_ke);
+      int32_t diff = (s_rates.ka_fp > s_rates.ke_fp) ? (E_e - E_a) : (E_a - E_e);
+      total_slope += (d->dB_coeff_unscaled * diff) >> F;
+    } else {
+      uint32_t tau_after = tau - d->d_sec;
+      int32_t E_a_rem = prv_eval_exp(s_rates.ka_fp, tau_after, LUT_ka);
+      int32_t E_e_rem = prv_eval_exp(s_rates.ke_fp, tau_after, LUT_ke);
+
+      // term1 = -ke * B_end * e^-ke*tau
+      int64_t term1 = -((int64_t)d->B_end_ng * s_rates.ke_fp) >> F;
+      term1 = (term1 * E_e_rem) >> F;
+
+      // term2 = (ka * G_end / (ka-ke)) * (ke*e^-ke*tau - ka*e^-ka*tau)
+      int64_t g_coeff = ((int64_t)s_rates.factor_fp * d->G_end_ng) >> F;
+      int64_t inner = ((int64_t)s_rates.ke_fp * E_e_rem) >> F;
+      inner -= ((int64_t)s_rates.ka_fp * E_a_rem) >> F;
+            
+      int64_t term2 = (g_coeff * inner) >> F;
+      total_slope += (s_rates.ka_fp > s_rates.ke_fp) ? (term1 - term2) : (term1 + term2);
+    }
+  }
+
+  if (total_slope > 0) return 1;
+  if (total_slope < 0) return -1;
+  return 0;
 }
 
 static void prv_save_caffeine_stats() {
   persist_write_data(STORAGE_KEY_CAFFEINE_STATS, &s_stats, sizeof(s_stats));
 }
 
-static void prv_calculate_caffeine_stats() {
+static void prv_find_caffeine_peak() {
+  s_stats.peak_time = 0;
+  s_stats.peak_mg = 0;
+
+  int count = s_drinks_meta.count;
+  if (count == 0) return;
+  
+  static drink_peak_cache_t cache[DRINKS_BUF_SIZE];
+  int cache_count = 0;
+  time_t t_last_end = 0;
+
+  drink_t *drink = prv_get_drink_head();
+  
+  while (drink && cache_count < DRINKS_BUF_SIZE) {
+    drink_peak_cache_t *c = &cache[cache_count++];
+    c->start_time = drink->start_time;
+    c->d_sec = (uint32_t)drink->duration_min * SECONDS_PER_MINUTE;
+    uint32_t dose_ng = drink->dose_mg * NG_IN_MG;
+    c->R_ng_per_s = dose_ng / c->d_sec;
+
+    c->E_a_d_fp = prv_eval_exp(s_rates.ka_fp, c->d_sec, LUT_ka);
+    c->E_e_d_fp = prv_eval_exp(s_rates.ke_fp, c->d_sec, LUT_ke);
+        
+    int64_t R = c->R_ng_per_s;
+        
+    int64_t temp_G = R * (ONE_FP - c->E_a_d_fp);
+    c->G_end_ng = (int32_t)((temp_G + (s_rates.ka_fp >> 1)) / s_rates.ka_fp);
+        
+    int64_t temp_B1 = R * (ONE_FP - c->E_e_d_fp);
+    int32_t B_end_1 = (int32_t)((temp_B1 + (s_rates.ke_fp >> 1)) / s_rates.ke_fp);
+        
+    int64_t temp_B2 = R * (c->E_e_d_fp - c->E_a_d_fp);
+    int32_t B_end_2 = (int32_t)((temp_B2 + (s_rates.diff_fp >> 1)) / s_rates.diff_fp);
+    c->B_end_ng = B_end_1 - B_end_2;
+        
+    c->dB_coeff_unscaled = (int64_t)((R * s_rates.ka_fp + (s_rates.diff_fp >> 1)) / s_rates.diff_fp);
+
+    time_t end = drink->start_time + c->d_sec;
+    if (end > t_last_end) t_last_end = end;
+
+    drink = prv_get_drink_next(drink);
+  }
+
+  time_t search_start = cache[0].start_time;
+  time_t search_end = t_last_end + PEAK_SEARCH_INTERVAL;
+      
+  time_t best_lo = search_start;
+  uint32_t max_val = 0;
+  const int num_steps = 10;
+  time_t step_size = (search_end - search_start) / num_steps;
+      
+  for (int i = 0; i <= num_steps; i++) {
+    time_t check_t = search_start + (i * step_size);
+    prv_caffeine_totals_t check_total = prv_get_caffeine_totals(check_t, true);
+    if (check_total.blood_ng > max_val) {
+      max_val = check_total.blood_ng;
+      best_lo = (check_t > step_size) ? check_t - step_size : search_start;
+    }
+  }
+      
+  time_t lo = best_lo;
+  time_t hi = (best_lo + step_size * 2 > search_end) ? search_end : best_lo + step_size * 2;
+      
+  for (int i = 0; i < PEAK_SEARCH_ITER; i++) {
+    time_t mid = lo + (hi - lo) / 2;
+    // Check derivative sign with higher internal precision
+    if (prv_get_global_derivative_sign(mid, cache, cache_count) > 0) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  
+  prv_caffeine_totals_t final_totals = prv_get_caffeine_totals(lo, true);
+  s_stats.peak_time = lo;
+  s_stats.peak_mg = final_totals.blood_ng / NG_IN_MG;
+}
+
+static void prv_find_sleep_time() {
+  
+}
+
+static void prv_calculate_caffeine_stats(bool only_sleep) {
+  // find peak
+  if (!only_sleep)
+    prv_find_caffeine_peak();
+  
+  // find sleep from peak
+  prv_find_sleep_time();
   
   prv_save_caffeine_stats();
 }
@@ -336,9 +494,12 @@ static void prv_init_caffeine_stats() {
   if (persist_exists(STORAGE_KEY_CAFFEINE_STATS)) {
     persist_read_data(STORAGE_KEY_CAFFEINE_STATS, &s_stats, sizeof(s_stats));
   } else {
-    prv_calculate_caffeine_stats();
+    s_stats.peak_time = 0;
+    s_stats.sleep_time = 0;
+    prv_calculate_caffeine_stats(false);
   }
 }
+
 
 // ---- CAFFEINE FUNCTIONS END -----
 
@@ -360,25 +521,27 @@ void add_drink(int16_t miligrams, int8_t ingestion_duration) {
   };
   
   prv_drink_insert(drink);
-  prv_calculate_caffeine_stats();
+  prv_calculate_caffeine_stats(false);
 }
 
 void metabolism_update_settings(int16_t hl_elim_m, int8_t hl_abs_m) {
   prv_compute_rates(hl_elim_m, hl_abs_m);
   prv_build_LUT(s_rates.ka_fp, LUT_ka);
   prv_build_LUT(s_rates.ke_fp, LUT_ke);
-  prv_calculate_caffeine_stats();
+  prv_calculate_caffeine_stats(false);
 }
 
+void update_sleep() {
+  prv_calculate_caffeine_stats(true);
+}
 
-caffeine_totals_t get_caffeine_totals(){
-  caffeine_totals_t totals = {0, 0, 0};
-  time_t current_time = time(NULL);
-  drink_t *drink = prv_get_drink_head();
-  
-  while (drink != NULL) {
-    drink = prv_compute_drink_contribution(current_time, drink, &totals);
-  }
+caffeine_totals_t get_caffeine_totals() {
+  prv_caffeine_totals_t prv_totals = prv_get_caffeine_totals(time(NULL) + 30 * SECONDS_PER_MINUTE, false);
+  caffeine_totals_t totals = {
+    .blood_mg = prv_totals.blood_ng / NG_IN_MG,
+    .gut_mg = prv_totals.gut_ng / NG_IN_MG,
+    .pending_mg = prv_totals.pending_ng / NG_IN_MG,
+  };
   
   return totals;
 }

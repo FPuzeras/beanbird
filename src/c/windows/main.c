@@ -127,16 +127,16 @@ static void update_caffeine_text(void *_) {
   
   int sleep_time = current_time > caff_stats.sleep_time ? 0 : caff_stats.sleep_time - current_time ;
   
-  snprintf(s_sleep_buf, sizeof(s_sleep_buf), "<%dmg %02d:%02d:%02d", 
+  snprintf(s_sleep_buf, sizeof(s_sleep_buf), "<%umg %02d:%02d:%02d", 
            settings.sleep_mg,
-           sleep_time / SECONDS_PER_DAY,
+           sleep_time / SECONDS_PER_HOUR, // HOLY SHIT THIS FUCKING LINE
            (sleep_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
            sleep_time % SECONDS_PER_MINUTE);
   
   int peak_time = current_time > caff_stats.peak_time ? 0 : caff_stats.peak_time - current_time;
-  snprintf(s_peak_buf, sizeof(s_peak_buf), "%dmg %02d:%02d:%02d", 
+  snprintf(s_peak_buf, sizeof(s_peak_buf), "%umg %02d:%02d:%02d", 
            caff_stats.peak_mg,
-           peak_time / SECONDS_PER_DAY,
+           peak_time / SECONDS_PER_HOUR, // HOLY SHIT THIS FUCKING LINE
            (peak_time % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE,
            peak_time % SECONDS_PER_MINUTE);
   
@@ -268,7 +268,6 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_pending_gut_value);
   text_layer_destroy(s_sleep_field);
   text_layer_destroy(s_peak_field);
-  text_layer_destroy(s_sleep_field);
   
   bitmap_layer_destroy(s_sleep_layer);
   bitmap_layer_destroy(s_peak_layer);

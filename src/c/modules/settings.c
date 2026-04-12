@@ -134,13 +134,16 @@ void parse_inbox_settings(DictionaryIterator *iter) {
     }
   }
   
+  tuple = dict_find(iter, MESSAGE_KEY_SleepMg);
+  if (tuple) {
+    if (prv_parse_tuple_int16(tuple, &settings.sleep_mg) && !recalculate)
+      update_sleep(); // update sleep if mg changed, no need if calculation queued
+  }
+  
+  
   if (recalculate) {
     metabolism_update_settings(settings.half_life_elim, settings.half_life_abs);
   }
-  
-  tuple = dict_find(iter, MESSAGE_KEY_SleepMg);
-  if (tuple)
-    prv_parse_tuple_int16(tuple, &settings.sleep_mg);
   
   
   #ifdef PBL_COLOR

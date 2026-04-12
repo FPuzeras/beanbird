@@ -11,8 +11,10 @@
 
   #define MARGIN_TOP         4
 
-  #define FONT_TOP_LABEL     FONT_KEY_GOTHIC_28_BOLD
-  
+  #define FONT_HELPER        FONT_KEY_GOTHIC_18_BOLD
+  #define FONT_CAFF_VALUE    FONT_KEY_GOTHIC_28_BOLD
+
+  #define HELPER_H           18
   #define LABEL_H            36
   
 #elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
@@ -21,8 +23,10 @@
 
   #define MARGIN_TOP         3
 
-  #define FONT_TOP_LABEL     FONT_KEY_GOTHIC_28_BOLD
+  #define FONT_HELPER        FONT_KEY_GOTHIC_14_BOLD
+  #define FONT_CAFF_VALUE    FONT_KEY_GOTHIC_28_BOLD
   
+  #define HELPER_H           16
   #define LABEL_H            36
 
 #elif defined(PBL_PLATFORM_CHALK)
@@ -39,12 +43,13 @@
 
 #define CAFF_VAL_Y         ((SCREEN_H / 2) - (VALUE_H / 2))
 
-// Could display up to 5 digits, but that's crazy
-#define MAX_CAFF           9999
+// limited to avoid overflows 
+#define MAX_CAFF           2000
 
 static Window *s_custom_window;
 static ActionBarLayer *s_action_bar;
 static TextLayer *s_caffeine_text_layer;
+static TextLayer *s_text_helper;
 
 static GBitmap *s_icon_up;
 static GBitmap *s_icon_add;
@@ -123,6 +128,13 @@ static void custom_window_load(Window *window) {
   text_layer_set_font(s_caffeine_text_layer, fonts_get_system_font(FONT_CAFF_VALUE));
   text_layer_set_text(s_caffeine_text_layer, s_caffeine_buf);
   
+  s_text_helper = text_layer_create(GRect(0, MARGIN_TOP, CONTENT_W, HELPER_H));
+  text_layer_set_text(s_text_helper, "SELECT CUSTOM");
+  text_layer_set_text_alignment(s_text_helper, GTextAlignmentCenter);
+  text_layer_set_font(s_text_helper, fonts_get_system_font(FONT_HELPER));
+  layer_add_child(window_layer, text_layer_get_layer(s_text_helper));
+  
+  
   refresh_caffeine();
 
   layer_add_child(window_layer, text_layer_get_layer(s_caffeine_text_layer));
@@ -131,6 +143,7 @@ static void custom_window_load(Window *window) {
 static void custom_window_unload(Window *window) {
   action_bar_layer_destroy(s_action_bar);
   text_layer_destroy(s_caffeine_text_layer);
+  text_layer_destroy(s_text_helper);
   
   gbitmap_destroy(s_icon_up);
   gbitmap_destroy(s_icon_add);
