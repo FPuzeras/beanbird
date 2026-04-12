@@ -9,11 +9,14 @@
 #define ONE_FP    (1LL << F)
 #define HALF_FP   (1LL << (F - 1))
 #define LN2_FP    11629080  // (int32_t)(ln(2) * ONE_FP + 0.5)
+#define INV2_FP   8388608   // (int32_t)(ONE_FP / 2.0 + 0.5)
 #define INV6_FP   2796203   // (int32_t)(ONE_FP / 6.0 + 0.5)
-#define DELTA_T   (20 * SECONDS_PER_MINUTE)
+#define INV24_FP  699051    // (int32_t)(ONE_FP / 24.0 + 0.5)
+#define DELTA_T   (25 * SECONDS_PER_MINUTE) // 25min * 128 > 53h 
 #define N_LUT     128
 #define NG_IN_MG  1000000
 #define CUTOFF    100000
+#define REF_STEP  8
 
 typedef struct {
     int32_t ka_fp;
@@ -158,19 +161,34 @@ static int32_t prv_exp_taylor_neg(int32_t x_fp) {
 }
 
 static void prv_build_LUT(int32_t k_fp, int32_t LUT[N_LUT]) {
-    // x1 = k_fp * DELTA_T 
-    int64_t x1 = ((int64_t)k_fp * DELTA_T);
-    
-    // base step E1 = e^(-k * dT)
-    int32_t E1_fp = prv_exp_taylor_neg((int32_t)x1);
+  LUT[0] = ONE_FP;
+  
+  // compute exact entries at multiples of REF_STEP
+  for (int n = REF_STEP; n < N_LUT; n += REF_STEP) {
+    int64_t x = (int64_t)k_fp * n * DELTA_T;
+    LUT[n] = prv_exp_taylor_neg((int32_t)x);
+  }
+  
+  // fill gaps using recurrence from nearest left exact
+  for (int base = 0; base < N_LUT - 1; base += REF_STEP) {
+    int32_t current = LUT[base];
+    int32_t E1_step; // e^{-k * DELTA_T} (reused for short recurrence)
 
-    LUT[0] = ONE_FP;
-    if (N_LUT > 1) LUT[1] = E1_fp;
-    
-    // accumulate by repeated multiplication with rounding
-    for (int n = 2; n < N_LUT; n++) {
-        LUT[n] = (int32_t)((((int64_t)LUT[n-1] * E1_fp) + HALF_FP) >> F);
+    if (base == 0) {
+      int64_t x1 = (int64_t)k_fp * DELTA_T;
+      E1_step = prv_exp_taylor_neg((int32_t)x1);
+    } else {
+      E1_step = (int32_t)(((int64_t)LUT[base] * ONE_FP + (LUT[base - REF_STEP] >> 1))
+                / LUT[base - REF_STEP]);
     }
+
+    // Fill up to the next exact entry (or end of table)
+    int end = (base + REF_STEP < N_LUT) ? base + REF_STEP : N_LUT;
+    for (int n = base + 1; n < end; n++) {
+      LUT[n] = (int32_t)(((int64_t)current * E1_step + HALF_FP) >> F);
+      current = LUT[n];
+    }
+  }
 }
 
 static void prv_init_LUTs() {
@@ -198,13 +216,17 @@ static int32_t prv_eval_exp(int32_t k_fp, int32_t t, const int32_t LUT[N_LUT]) {
 
   if (rem == 0) return (int32_t)val;
 
-  // remainder factor e^{-k * rem} via 3-term Taylor series
+  // remainder factor e^{-k * rem} via 4-term Taylor series
   int64_t y_fp = ((int64_t)k_fp * rem);
   int64_t y2 = (y_fp * y_fp + HALF_FP) >> F;
   int64_t y3 = (y2 * y_fp + HALF_FP) >> F;
+  int64_t y4 = (y3 * y_fp + HALF_FP) >> F;
   
-  // taylor = 1 - y + y^2/2 - y^3/6
-  int64_t taylor = ONE_FP - y_fp + (y2 >> 1) - ((y3 * INV6_FP + HALF_FP) >> F);
+  // taylor = 1 - y + y^2/2 - y^3/6 + y^4/24
+  int64_t taylor = ONE_FP - y_fp + ((y2 * INV2_FP + HALF_FP) >> F)
+                   - ((y3 * INV6_FP + HALF_FP) >> F)
+                   + ((y4 * INV24_FP + HALF_FP) >> F);
+  
   if (taylor < 0) taylor = 0;
   
   val = (val * taylor + HALF_FP) >> F;

@@ -5,6 +5,34 @@
 
 ClaySettings settings;
 
+static bool prv_parse_tuple_int8(Tuple *t, int8_t *value) {
+  if (t->type == TUPLE_INT || t->type == TUPLE_UINT) {
+    *value = (int8_t)t->value->uint32;
+    return true;
+  } else if (t->type == TUPLE_INT) {
+    *value = (int8_t)t->value->int32;
+    return true;
+  } else if (t->type == TUPLE_CSTRING) {
+    *value = atoi(t->value->cstring);
+    return true;
+  }
+  return false;
+}
+
+static bool prv_parse_tuple_int16(Tuple *t, int16_t *value) {
+  if (t->type == TUPLE_INT || t->type == TUPLE_UINT) {
+    *value = (int16_t)t->value->uint32;
+    return true;
+  } else if (t->type == TUPLE_INT) {
+    *value = (int16_t)t->value->int32;
+    return true;
+  } else if (t->type == TUPLE_CSTRING) {
+    *value = atoi(t->value->cstring);
+    return true;
+  }
+  return false;
+}
+
 static void prv_default_settings() {
   // caff_content
   static const int16_t default_caff[DRINK_COUNT] = { 50, 90, 150, 80, 113, 160 };
@@ -57,7 +85,7 @@ void parse_inbox_settings(DictionaryIterator *iter) {
   for (uint32_t i = 0; i < DRINK_COUNT; i++) {
     tuple = dict_find(iter, MESSAGE_KEY_CaffContent + i);
     if (tuple) {
-      settings.caff_content[i] = tuple->value->int16;
+      prv_parse_tuple_int16(tuple, &settings.caff_content[i]);
     }
     tuple = dict_find(iter, MESSAGE_KEY_DrinkTitle + i);
     if (tuple) {
@@ -69,36 +97,39 @@ void parse_inbox_settings(DictionaryIterator *iter) {
   // load drink timings
   tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 0);
   if (tuple) {
-    settings.drink_time[0] = tuple->value->int8;
+    prv_parse_tuple_int8(tuple, &settings.drink_time[0]);
   }
   tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 1);
   if (tuple) {
-    settings.drink_time[1] = tuple->value->int8;
+    prv_parse_tuple_int8(tuple, &settings.drink_time[1]);
   }
   tuple = dict_find(iter, MESSAGE_KEY_DrinkTiming + 2);
   if (tuple) {
-    settings.drink_time[2] = tuple->value->int8;
+   prv_parse_tuple_int8(tuple, &settings.drink_time[2]);
   }
   
   // load custom page preferences
   tuple = dict_find(iter, MESSAGE_KEY_CustomCaff);
   if (tuple) {
-    settings.custom_caff = tuple->value->int16;
+    prv_parse_tuple_int16(tuple, &settings.custom_caff);
   }
   tuple = dict_find(iter, MESSAGE_KEY_CustomStep);
   if (tuple) {
-    settings.custom_step = tuple->value->int8;
+    prv_parse_tuple_int8(tuple, &settings.custom_step);
   }
   
   // load model constants
   tuple = dict_find(iter, MESSAGE_KEY_EliminationHL);
   if (tuple) {
-    recalculate = true;
-    settings.half_life_elim = tuple->value->int16;
+    if (prv_parse_tuple_int16(tuple, &settings.half_life_elim)) {
+      recalculate = true;
+    }
   }
   tuple = dict_find(iter, MESSAGE_KEY_AbsorbtionHL);
   if (tuple) {
-    settings.half_life_abs = tuple->value->int8;
+    if (prv_parse_tuple_int8(tuple, &settings.half_life_abs)) {
+      recalculate = true;
+    }
   }
   
   if (recalculate) {
@@ -109,11 +140,11 @@ void parse_inbox_settings(DictionaryIterator *iter) {
    #ifdef PBL_COLOR
     tuple = dict_find(iter, MESSAGE_KEY_PreferMin);
     if (tuple) {
-      settings.minimum_mg = tuple->value->int16;
+      prv_parse_tuple_int16(tuple, &settings.minimum_mg);
     } 
     tuple = dict_find(iter, MESSAGE_KEY_PreferMax);
     if (tuple) {
-      settings.maximum_mg = tuple->value->int16;
+      prv_parse_tuple_int16(tuple, &settings.maximum_mg);
     }
   #endif
   

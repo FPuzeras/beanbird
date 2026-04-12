@@ -312,10 +312,10 @@ module.exports = [
         "type": "input",
         "messageKey": "CustomCaff",
         "label": "Custom drink default caffeine content (mg)",
-        "defaultValue": 100,
+        "defaultValue": 105,
         "attributes": {
           "type": "number",
-          "min": 0,
+          "min": 1,
           "max": 999,
           "step": 1
         }
@@ -327,10 +327,14 @@ module.exports = [
         "defaultValue": 5,
         "attributes": {
           "type": "number",
-          "min": 0,
+          "min": 1,
           "max": 100,
           "step": 1
         }
+      },
+      {
+        "type": "text",
+        "defaultValue": "Do not set half-lifes too close, maintain at least 10min difference, otherwise simulation errors might become very large.",
       },
       {
         "type": "input",
@@ -339,7 +343,7 @@ module.exports = [
         "defaultValue": 20,
         "attributes": {
           "type": "number",
-          "min": 1,
+          "min": 5,
           "max": 120,
           "step": 1
         }
@@ -351,7 +355,7 @@ module.exports = [
         "defaultValue": 300,
         "attributes": {
           "type": "number",
-          "min": 1,
+          "min": 90,
           "max": 1600,
           "step": 1
         }

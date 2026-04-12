@@ -71,7 +71,7 @@
 #define BOT_VAL_Y          (BOT_LABEL_Y + SMALL_LABEL_H)
 #define BOT_SUB_Y          (BOT_VAL_Y + SMALL_VALUE_H)
 
-#define REFRESH_MS         1100
+#define REFRESH_MS         1000
 
 
 static Window *s_main_window;
