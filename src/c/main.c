@@ -17,6 +17,7 @@ static void init(void) {
 
 static void deinit(void) {  
   window_stack_pop_all(true);
+  caffeine_cleanup();
 }
 
 int main(void) {

@@ -28,12 +28,14 @@
             "media": [
                 {
                     "file": "images/ActionUp",
+                    "memoryFormat": "Smallest",
                     "name": "ICON_ACTION_UP",
                     "targetPlatforms": null,
                     "type": "bitmap"
                 },
                 {
                     "file": "images/InfoSleep",
+                    "memoryFormat": "Smallest",
                     "name": "ICON_SLEEP",
                     "targetPlatforms": [
                         "aplite",
@@ -46,24 +48,28 @@
                 },
                 {
                     "file": "images/ActionMore",
+                    "memoryFormat": "Smallest",
                     "name": "ICON_ACTION_MORE",
                     "targetPlatforms": null,
                     "type": "bitmap"
                 },
                 {
                     "file": "images/ActionAdd",
+                    "memoryFormat": "Smallest",
                     "name": "ICON_ACTION_ADD",
                     "targetPlatforms": null,
                     "type": "bitmap"
                 },
                 {
                     "file": "images/ActionDown",
+                    "memoryFormat": "Smallest",
                     "name": "ICON_ACTION_DOWN",
                     "targetPlatforms": null,
                     "type": "bitmap"
                 },
                 {
                     "file": "images/Logo",
+                    "memoryFormat": "Smallest",
                     "menuIcon": true,
                     "name": "ICON_LOGO",
                     "targetPlatforms": null,
@@ -71,6 +77,7 @@
                 },
                 {
                     "file": "images/InfoPeak",
+                    "memoryFormat": "Smallest",
                     "name": "ICON_PEAK",
                     "targetPlatforms": [
                         "aplite",

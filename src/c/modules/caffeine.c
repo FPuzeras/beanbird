@@ -22,6 +22,7 @@
 #define PEAK_SEARCH_ITER       20
 #define SLEEP_SEARCH_INTERVAL  SECONDS_PER_DAY
 #define SLEEP_SEARCH_ITER      16
+
 typedef struct {
   int32_t ka_fp;
   int32_t ke_fp;
@@ -60,15 +61,15 @@ typedef struct {
   uint32_t blood_ng;
 } prv_caffeine_totals_t;
 
-static drink_t s_drinks_buf[DRINKS_BUF_SIZE];
+static drink_t *s_drinks_buf = NULL;
 static drinks_meta_t s_drinks_meta;
 
 static rate_constants_t s_rates;
 
 static caffeine_stats_t s_stats;
 
-static int32_t LUT_ka[N_LUT];
-static int32_t LUT_ke[N_LUT];
+static int32_t *LUT_ka = NULL;
+static int32_t *LUT_ke = NULL;
 
 
 // ----- DRINKS BUFFER FUNCTIONS BEGIN -----
@@ -77,7 +78,7 @@ static drink_t* prv_get_drink_head() {
 }
 
 static void prv_save_drinks() {
-  persist_write_data(STORAGE_KEY_DRINKS_BUF, s_drinks_buf, sizeof(s_drinks_buf));
+  persist_write_data(STORAGE_KEY_DRINKS_BUF, s_drinks_buf, sizeof(drink_t) * DRINKS_BUF_SIZE);
   persist_write_data(STORAGE_KEY_DRINKS_META, &s_drinks_meta, sizeof(s_drinks_meta));
 }
 
@@ -128,9 +129,13 @@ static bool prv_drink_remove(drink_t *target) {
   return true;
 }
 
-static void prv_init_drinks () {
+static void prv_init_drinks () { 
+  if (!s_drinks_buf) {
+    s_drinks_buf = malloc(sizeof(drink_t) * DRINKS_BUF_SIZE);
+  }
+  
   if (persist_exists(STORAGE_KEY_DRINKS_BUF) && persist_exists(STORAGE_KEY_DRINKS_META)) {
-    persist_read_data(STORAGE_KEY_DRINKS_BUF, &s_drinks_buf, sizeof(s_drinks_buf));
+    persist_read_data(STORAGE_KEY_DRINKS_BUF, s_drinks_buf, sizeof(drink_t) * DRINKS_BUF_SIZE);
     persist_read_data(STORAGE_KEY_DRINKS_META, &s_drinks_meta, sizeof(s_drinks_meta));
   } else {
     s_drinks_meta.count = 0;
@@ -143,9 +148,6 @@ static void prv_init_drinks () {
 // ---- CAFFEINE FUNCTIONS BEGIN -----
 
 static void prv_compute_rates(int16_t e_t_half, int8_t a_t_half) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Elimination half-life (min): %d", e_t_half);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Absorbtion half-life (min): %d", a_t_half);
-  
   if (e_t_half < 1) e_t_half = 1;
   if (a_t_half < 1) a_t_half = 1;
   
@@ -212,7 +214,18 @@ static void prv_build_LUT(int32_t k_fp, int32_t LUT[N_LUT]) {
     }
 }
 
+static void prv_alloc_LUTs() {
+  if (!LUT_ka) {
+    LUT_ka = malloc(sizeof(int32_t) * N_LUT);
+  }
+  
+  if (!LUT_ke) {
+    LUT_ke = malloc(sizeof(int32_t) * N_LUT);
+  }
+}
+
 static void prv_init_LUTs() {
+  prv_alloc_LUTs();
   prv_build_LUT(s_rates.ka_fp, LUT_ka);
   prv_build_LUT(s_rates.ke_fp, LUT_ke);
 }
@@ -405,7 +418,7 @@ static void prv_find_caffeine_peak() {
   int count = s_drinks_meta.count;
   if (count == 0) return;
   
-  static drink_peak_cache_t cache[DRINKS_BUF_SIZE];
+  drink_peak_cache_t *cache = malloc(sizeof(drink_peak_cache_t) * DRINKS_BUF_SIZE);
   int cache_count = 0;
   time_t t_last_end = 0;
 
@@ -457,7 +470,7 @@ static void prv_find_caffeine_peak() {
       best_lo = (check_t > step_size) ? check_t - step_size : search_start;
     }
   }
-      
+        
   time_t lo = best_lo;
   time_t hi = (best_lo + step_size * 2 > search_end) ? search_end : best_lo + step_size * 2;
       
@@ -471,6 +484,8 @@ static void prv_find_caffeine_peak() {
     }
   }
   
+  free(cache);
+
   prv_caffeine_totals_t final_totals = prv_get_caffeine_totals(lo, true);
   s_stats.peak_time = lo;
   s_stats.peak_mg = final_totals.blood_ng / NG_IN_MG;
@@ -551,6 +566,7 @@ void add_drink(int16_t miligrams, int8_t ingestion_duration) {
 
 void metabolism_update_settings(int16_t hl_elim_m, int8_t hl_abs_m) {
   prv_compute_rates(hl_elim_m, hl_abs_m);
+  prv_alloc_LUTs();
   prv_build_LUT(s_rates.ka_fp, LUT_ka);
   prv_build_LUT(s_rates.ke_fp, LUT_ke);
   prv_calculate_caffeine_stats(false);
@@ -573,4 +589,10 @@ caffeine_totals_t get_caffeine_totals() {
 
 caffeine_stats_t get_caffeine_stats() {
   return s_stats;
+}
+
+void caffeine_cleanup() {
+  free(LUT_ka);
+  free(LUT_ke);
+  free(s_drinks_buf);
 }

@@ -25,3 +25,5 @@ void update_sleep();
 caffeine_totals_t get_caffeine_totals();
 
 caffeine_stats_t get_caffeine_stats();
+
+void caffeine_cleanup();

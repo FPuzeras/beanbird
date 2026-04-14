@@ -251,12 +251,9 @@ static void main_window_load(Window *window) {
   s_peak_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_2_Y + 1, 25, LABEL_H));
   bitmap_layer_set_bitmap(s_peak_layer, s_icon_peak);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_peak_layer));
-  
-  update_caffeine_text(NULL);
 }
 
 static void main_window_unload(Window *window) {
-  app_timer_cancel(s_refresh_timer);
   action_bar_layer_destroy(s_action_bar);
   layer_destroy(s_canvas_layer);
   
@@ -281,12 +278,22 @@ static void main_window_unload(Window *window) {
   window_destroy(s_main_window);
 }
 
+static void main_window_appear(Window *window) {
+  update_caffeine_text(NULL);
+}
+
+static void main_window_disappear(Window *window) {
+  app_timer_cancel(s_refresh_timer);
+}
+
 void push_window_main() {
   s_main_window = window_create();
   window_set_click_config_provider(s_main_window, click_config_provider);
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load = main_window_load,
     .unload = main_window_unload,
+    .appear = main_window_appear,
+    .disappear = main_window_disappear,
   });
   window_stack_push(s_main_window, true);
 }
