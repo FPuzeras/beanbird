@@ -191,23 +191,9 @@ static int32_t prv_exp_taylor_neg(int32_t x_fp) {
     return (int32_t)result;
 }
 
-static int32_t prv_exp_taylor_for_step(int32_t k_fp, int32_t duration_s) {
-    int64_t x_fp = ((int64_t)k_fp * duration_s);
-    int64_t x2 = (x_fp * x_fp + HALF_FP) >> F;
-    int64_t x3 = (x2 * x_fp + HALF_FP) >> F;
-    int64_t x4 = (x3 * x_fp + HALF_FP) >> F;
-    int64_t x5 = (x4 * x_fp + HALF_FP) >> F;
-    
-    // 1 - x + x^2/2 - x^3/6 + x^4/24 - x^5/120
-    return ONE_FP - x_fp + ((x2 * INV2_FP + HALF_FP) >> F) 
-                         - ((x3 * INV6_FP + HALF_FP) >> F) 
-                         + ((x4 * INV24_FP + HALF_FP) >> F)
-                         - ((x5 * (ONE_FP/120) + HALF_FP) >> F);
-}
-
 static void prv_build_LUT(int32_t k_fp, int32_t LUT[N_LUT]) {
     LUT[0] = ONE_FP;
-    int32_t E_step = prv_exp_taylor_for_step(k_fp, DELTA_T);
+    int32_t E_step = prv_exp_taylor_neg((int64_t)k_fp * DELTA_T);
 
     for (int n = 1; n < N_LUT; n++) {
         LUT[n] = (int32_t)(((int64_t)LUT[n-1] * E_step + HALF_FP) >> F);
