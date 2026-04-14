@@ -160,11 +160,16 @@ static void prv_compute_rates(int16_t e_t_half, int8_t a_t_half) {
   s_rates.inv_ka_fp = ((1LL << (F + F)) + (s_rates.ka_fp >> 1)) / s_rates.ka_fp;
   s_rates.inv_ke_fp = ((1LL << (F + F)) + (s_rates.ke_fp >> 1)) / s_rates.ke_fp;
 
-  if (s_rates.ka_fp > s_rates.ke_fp) {
-    s_rates.diff_fp = s_rates.ka_fp - s_rates.ke_fp;
-  } else {
-    s_rates.diff_fp = s_rates.ke_fp - s_rates.ka_fp;
-  }
+  
+  int64_t time_diff = (int64_t)e_half_sec - a_half_sec;
+  if (time_diff < 0) time_diff = -time_diff; // "rare phenotype" guard
+
+  int64_t numerator = (int64_t)LN2_FP * time_diff;
+  int64_t denominator = (int64_t)e_half_sec * a_half_sec;
+  
+  s_rates.diff_fp = (int32_t)((numerator + (denominator / 2)) / denominator);
+
+  if (s_rates.diff_fp == 0) s_rates.diff_fp = 1; // illiterate user guard
 
   s_rates.inv_diff_fp = ((1LL << (F + F)) + (s_rates.diff_fp >> 1)) / s_rates.diff_fp;
   s_rates.factor_fp = (int32_t)(((int64_t)s_rates.ka_fp * s_rates.inv_diff_fp + HALF_FP) >> F);
