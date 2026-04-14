@@ -95,12 +95,13 @@
             "aplite",
             "basalt",
             "diorite",
-            "emery"
+            "emery",
+            "flint"
         ],
         "uuid": "d128bfa9-0349-4d1f-83b6-b69037eb7e4a",
         "watchapp": {
             "watchface": false
         }
     },
-    "version": "0.1.0"
+    "version": "0.3.0"
 }
