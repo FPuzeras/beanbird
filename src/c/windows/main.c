@@ -14,7 +14,7 @@
   #define ICON_OFFSET        3
   
   #define MARGIN_TOP         4
-  #define SIDE_PADDING       6
+  #define SIDE_PADDING       12
   
   #define LABEL_H            24
   #define VALUE_H            36
@@ -26,9 +26,6 @@
   #define FONT_MID_LABEL     FONT_KEY_GOTHIC_18
   #define FONT_MID_VALUE     FONT_KEY_GOTHIC_28_BOLD
   #define FONT_BOT_FIELD     FONT_KEY_GOTHIC_18_BOLD
-
-  #define GUT_LABEL_TEXT     "GUT CAFF."
-  #define DRINK_LABEL_TEXT   "DRINK CAFF."
   
 #elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
   #define SCREEN_W           144
@@ -49,9 +46,6 @@
   #define FONT_MID_LABEL     FONT_KEY_GOTHIC_14
   #define FONT_MID_VALUE     FONT_KEY_GOTHIC_24_BOLD
   #define FONT_BOT_FIELD     FONT_KEY_GOTHIC_14
-
-  #define GUT_LABEL_TEXT     "GUT"
-  #define DRINK_LABEL_TEXT   "DRINK"
 
 #elif defined(PBL_PLATFORM_CHALK)
   #error "Not implemented."
@@ -215,7 +209,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(s_caffeine_value_layer));
 
   s_pending_drink_label = text_layer_create(GRect(2, MID_LABEL_Y, HALF_CONTENT_W - 4, SMALL_LABEL_H));
-  text_layer_set_text(s_pending_drink_label, DRINK_LABEL_TEXT);
+  text_layer_set_text(s_pending_drink_label, "DRINK");
   text_layer_set_font(s_pending_drink_label, fonts_get_system_font(FONT_MID_LABEL));
   text_layer_set_text_alignment(s_pending_drink_label, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_pending_drink_label));
@@ -226,7 +220,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(s_pending_drink_value));
 
   s_pending_gut_label = text_layer_create(GRect(HALF_CONTENT_W + 2, MID_LABEL_Y, HALF_CONTENT_W - 4, SMALL_LABEL_H));
-  text_layer_set_text(s_pending_gut_label, GUT_LABEL_TEXT);
+  text_layer_set_text(s_pending_gut_label, "GUT");
   text_layer_set_font(s_pending_gut_label, fonts_get_system_font(FONT_MID_LABEL));
   text_layer_set_text_alignment(s_pending_gut_label, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_pending_gut_label));
@@ -252,7 +246,7 @@ static void main_window_load(Window *window) {
   bitmap_layer_set_bitmap(s_sleep_layer, s_icon_sleep);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_sleep_layer));
   
-  s_peak_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_2_Y + ICON_OFFSET, 25, 25));
+  s_peak_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_2_Y, 25, 25));
   bitmap_layer_set_bitmap(s_peak_layer, s_icon_peak);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_peak_layer));
 }
