@@ -85,9 +85,9 @@ static AppTimer* s_refresh_timer;
 
 static AppTimer* s_refresh_timer;
 
-static GBitmap *s_icon_up;
+static GBitmap *s_icon_g1;
 static GBitmap *s_icon_more;
-static GBitmap *s_icon_down;
+static GBitmap *s_icon_g2;
 
 static GBitmap *s_icon_sleep;
 static GBitmap *s_icon_peak;
@@ -184,16 +184,16 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
   
-  s_icon_up = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_UP);
+  s_icon_g1 = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_GROUP_1);
   s_icon_more = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_MORE);
-  s_icon_down = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_DOWN);
+  s_icon_g2 = gbitmap_create_with_resource(RESOURCE_ID_ICON_ACTION_GROUP_2);
   
   s_icon_sleep = gbitmap_create_with_resource(RESOURCE_ID_ICON_SLEEP);
   s_icon_peak = gbitmap_create_with_resource(RESOURCE_ID_ICON_PEAK);
   
-  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_up);
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_g1);
   action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_more);
-  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_down);
+  action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_g2);
 
   s_caffeine_label_layer = text_layer_create(GRect(0, MARGIN_TOP, CONTENT_W, LABEL_H));
   text_layer_set_text(s_caffeine_label_layer, "BLOOD CAFFEINE");
@@ -267,9 +267,9 @@ static void main_window_unload(Window *window) {
   bitmap_layer_destroy(s_sleep_layer);
   bitmap_layer_destroy(s_peak_layer);
   
-  gbitmap_destroy(s_icon_up);
+  gbitmap_destroy(s_icon_g1);
   gbitmap_destroy(s_icon_more);
-  gbitmap_destroy(s_icon_down);
+  gbitmap_destroy(s_icon_g2);
   gbitmap_destroy(s_icon_sleep);
   gbitmap_destroy(s_icon_peak);
   

@@ -87,6 +87,18 @@
                         "flint"
                     ],
                     "type": "bitmap"
+                },
+                {
+                    "file": "images/ActionGroup2",
+                    "name": "ICON_ACTION_GROUP_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/ActionGroup1",
+                    "name": "ICON_ACTION_GROUP_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
                 }
             ]
         },
