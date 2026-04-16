@@ -10,6 +10,8 @@
 #if defined(PBL_PLATFORM_EMERY)
   #define SCREEN_W           200
   #define SCREEN_H           228
+
+  #define ICON_OFFSET        3
   
   #define MARGIN_TOP         4
   #define SIDE_PADDING       6
@@ -31,7 +33,9 @@
 #elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
   #define SCREEN_W           144
   #define SCREEN_H           168
-  
+
+  #define ICON_OFFSET        1
+
   #define MARGIN_TOP         3
   #define SIDE_PADDING       4
   
@@ -244,11 +248,11 @@ static void main_window_load(Window *window) {
   text_layer_set_text_alignment(s_peak_field, GTextAlignmentRight);
   layer_add_child(window_layer, text_layer_get_layer(s_peak_field));
   
-  s_sleep_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_1_Y + 1, 25, LABEL_H));
+  s_sleep_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_1_Y + ICON_OFFSET, 25, 25));
   bitmap_layer_set_bitmap(s_sleep_layer, s_icon_sleep);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_sleep_layer));
   
-  s_peak_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_2_Y + 1, 25, LABEL_H));
+  s_peak_layer = bitmap_layer_create(GRect(SIDE_PADDING, BOT_FIELD_2_Y + ICON_OFFSET, 25, 25));
   bitmap_layer_set_bitmap(s_peak_layer, s_icon_peak);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_peak_layer));
 }

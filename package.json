@@ -34,19 +34,6 @@
                     "type": "bitmap"
                 },
                 {
-                    "file": "images/InfoSleep",
-                    "memoryFormat": "Smallest",
-                    "name": "ICON_SLEEP",
-                    "targetPlatforms": [
-                        "aplite",
-                        "basalt",
-                        "diorite",
-                        "emery",
-                        "flint"
-                    ],
-                    "type": "bitmap"
-                },
-                {
                     "file": "images/ActionMore",
                     "memoryFormat": "Smallest",
                     "name": "ICON_ACTION_MORE",
@@ -79,6 +66,19 @@
                     "file": "images/InfoPeak",
                     "memoryFormat": "Smallest",
                     "name": "ICON_PEAK",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "diorite",
+                        "emery",
+                        "flint"
+                    ],
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/InfoSleep",
+                    "memoryFormat": "Smallest",
+                    "name": "ICON_SLEEP",
                     "targetPlatforms": [
                         "aplite",
                         "basalt",
