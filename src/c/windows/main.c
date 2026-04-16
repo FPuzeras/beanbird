@@ -160,7 +160,7 @@ static void update_caffeine_text(void *_) {
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   #ifdef PBL_COLOR
-    graphics_context_set_stroke_color(ctx, GColorLightGray);
+    graphics_context_set_stroke_color(ctx, GColorDarkGray);
   #else
     graphics_context_set_stroke_color(ctx, GColorBlack);
   #endif
